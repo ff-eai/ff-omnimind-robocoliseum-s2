@@ -1,0 +1,8 @@
+# Season II worker, Python 3.12.3 (versions of the evaluated run)
+numpy==2.2.6
+msgpack==1.2.3
+websockets==17.3
+PyYAML==6.0.3
+requests==2.34.2
+opencv-python-headless==4.13.0.92
+Pillow==12.3.0

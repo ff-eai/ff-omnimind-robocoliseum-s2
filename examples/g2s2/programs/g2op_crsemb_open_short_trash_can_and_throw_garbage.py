@@ -1,0 +1,1 @@
+open_short_trash_can_and_throw_garbage.py

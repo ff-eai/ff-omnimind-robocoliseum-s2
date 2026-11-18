@@ -1,0 +1,5077 @@
+[
+ {
+  "task": "agilex_crsemb_hang_cups_on_cup_tree",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "agilex",
+  "sub_task": "hang_cups_on_cup_tree_agilex",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "hang_cups_on_cup_tree_agilex",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 40,
+      "step": 1,
+      "step_out": 750,
+      "checker": "Hang",
+      "B": 20,
+      "process_points": 80.0
+     }
+    ],
+    "episode_step_limit": 1200,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     80
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "agilex_crsemb_keyboard_keycap_swap",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "agilex",
+  "sub_task": "keyboard_keycap_swap_agilex",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "keyboard_keycap_swap_agilex",
+    "top": [
+     "ActionList",
+     3
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 0,
+      "step_out": 900,
+      "checker": "PickUpOnGripper",
+      "B": 24,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 20,
+      "step": 1,
+      "step_out": 900,
+      "checker": "LiftUp",
+      "B": 24,
+      "process_points": 40.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 25,
+      "step": 2,
+      "step_out": 2700,
+      "checker": "PlaceOnRivet",
+      "B": 72,
+      "process_points": 50.0
+     }
+    ],
+    "episode_step_limit": 4500,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     10,
+     40,
+     50
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "agilex_crsemb_open_short_trash_can_and_throw_garbage",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "agilex",
+  "sub_task": "open_short_trash_can_and_throw_garbage_multi_robot",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "open_short_trash_can_and_throw_garbage_multi_robot",
+    "top": [
+     "ActionList",
+     3
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 450,
+      "checker": "PushPull",
+      "B": 12,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 1,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 30,
+      "step": 2,
+      "step_out": 300,
+      "checker": "Inside",
+      "B": 8,
+      "process_points": 60.0
+     }
+    ],
+    "episode_step_limit": 1200,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     20,
+     60
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "agilex_crsemb_pour_50ml_into_graduated_cylinder",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "agilex",
+  "sub_task": "pour_50ml_into_graduated_cylinder_agilex",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "pour_50ml_into_graduated_cylinder_agilex",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 600,
+      "checker": "PickUpOnGripper",
+      "B": 16,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 40,
+      "step": 1,
+      "step_out": 2700,
+      "checker": "PourVolume",
+      "B": 72,
+      "process_points": 80.0
+     }
+    ],
+    "episode_step_limit": 3300,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     80
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "agilex_crsemb_scrape_chicken_bone_into_bin",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "agilex",
+  "sub_task": "scrape_chicken_bone_into_bin_agilex",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "scrape_chicken_bone_into_bin_agilex",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 15,
+      "step": 0,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 30.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 35,
+      "step": 1,
+      "step_out": 900,
+      "checker": "MixedRules",
+      "B": 24,
+      "process_points": 70.0
+     }
+    ],
+    "episode_step_limit": 1350,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     30,
+     70
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "agilex_crsemb_write_uppercase_letter_with_pen",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "agilex",
+  "sub_task": "write_uppercase_letter_with_pen_agilex",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "write_uppercase_letter_with_pen_agilex",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 1200,
+      "checker": "PickUpOnGripper",
+      "B": 32,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 40,
+      "step": 1,
+      "step_out": 1200,
+      "checker": "InkOverlap",
+      "B": 32,
+      "process_points": 80.0
+     }
+    ],
+    "episode_step_limit": 2400,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     80
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "arxone_crsemb_hang_cups_on_cup_tree",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "arx",
+  "sub_task": "hang_cups_on_cup_tree_arxone",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "hang_cups_on_cup_tree_arxone",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 40,
+      "step": 1,
+      "step_out": 750,
+      "checker": "Hang",
+      "B": 20,
+      "process_points": 80.0
+     }
+    ],
+    "episode_step_limit": 1200,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     80
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "arxone_crsemb_keyboard_keycap_swap",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "arx",
+  "sub_task": "keyboard_keycap_swap_arxone",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "keyboard_keycap_swap_arxone",
+    "top": [
+     "ActionList",
+     3
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 0,
+      "step_out": 900,
+      "checker": "PickUpOnGripper",
+      "B": 24,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 20,
+      "step": 1,
+      "step_out": 900,
+      "checker": "LiftUp",
+      "B": 24,
+      "process_points": 40.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 25,
+      "step": 2,
+      "step_out": 2700,
+      "checker": "PlaceOnRivet",
+      "B": 72,
+      "process_points": 50.0
+     }
+    ],
+    "episode_step_limit": 4500,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     10,
+     40,
+     50
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "arxone_crsemb_open_short_trash_can_and_throw_garbage",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "arx",
+  "sub_task": "open_short_trash_can_and_throw_garbage_multi_robot",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "open_short_trash_can_and_throw_garbage_multi_robot",
+    "top": [
+     "ActionList",
+     3
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 450,
+      "checker": "PushPull",
+      "B": 12,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 1,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 30,
+      "step": 2,
+      "step_out": 300,
+      "checker": "Inside",
+      "B": 8,
+      "process_points": 60.0
+     }
+    ],
+    "episode_step_limit": 1200,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     20,
+     60
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "arxone_crsemb_pour_50ml_into_graduated_cylinder",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "arx",
+  "sub_task": "pour_50ml_into_graduated_cylinder_arxone",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "pour_50ml_into_graduated_cylinder_arxone",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 600,
+      "checker": "PickUpOnGripper",
+      "B": 16,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 40,
+      "step": 1,
+      "step_out": 2700,
+      "checker": "PourVolume",
+      "B": 72,
+      "process_points": 80.0
+     }
+    ],
+    "episode_step_limit": 3300,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     80
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "arxone_crsemb_scrape_chicken_bone_into_bin",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "arx",
+  "sub_task": "scrape_chicken_bone_into_bin_arxone",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "scrape_chicken_bone_into_bin_arxone",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 15,
+      "step": 0,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 30.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 35,
+      "step": 1,
+      "step_out": 900,
+      "checker": "MixedRules",
+      "B": 24,
+      "process_points": 70.0
+     }
+    ],
+    "episode_step_limit": 1350,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     30,
+     70
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "arxone_crsemb_write_uppercase_letter_with_pen",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "arx",
+  "sub_task": "write_uppercase_letter_with_pen_arxone",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "write_uppercase_letter_with_pen_arxone",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 1200,
+      "checker": "PickUpOnGripper",
+      "B": 32,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 40,
+      "step": 1,
+      "step_out": 1200,
+      "checker": "InkOverlap",
+      "B": 32,
+      "process_points": 80.0
+     }
+    ],
+    "episode_step_limit": 2400,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     80
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g1_crsemb_hang_cups_on_cup_tree",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "G1_omnipicker",
+  "sub_task": "hang_cups_on_cup_tree_g1",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "hang_cups_on_cup_tree_g1",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 40,
+      "step": 1,
+      "step_out": 750,
+      "checker": "Hang",
+      "B": 20,
+      "process_points": 80.0
+     }
+    ],
+    "episode_step_limit": 1200,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     80
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g1_crsemb_keyboard_keycap_swap",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "G1_omnipicker",
+  "sub_task": "keyboard_keycap_swap_g1",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "keyboard_keycap_swap_g1",
+    "top": [
+     "ActionList",
+     3
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 0,
+      "step_out": 900,
+      "checker": "PickUpOnGripper",
+      "B": 24,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 20,
+      "step": 1,
+      "step_out": 900,
+      "checker": "LiftUp",
+      "B": 24,
+      "process_points": 40.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 25,
+      "step": 2,
+      "step_out": 2700,
+      "checker": "PlaceOnRivet",
+      "B": 72,
+      "process_points": 50.0
+     }
+    ],
+    "episode_step_limit": 4500,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     10,
+     40,
+     50
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g1_crsemb_open_short_trash_can_and_throw_garbage",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "G1_omnipicker",
+  "sub_task": "open_short_trash_can_and_throw_garbage_multi_robot",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "open_short_trash_can_and_throw_garbage_multi_robot",
+    "top": [
+     "ActionList",
+     3
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 450,
+      "checker": "PushPull",
+      "B": 12,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 1,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 30,
+      "step": 2,
+      "step_out": 300,
+      "checker": "Inside",
+      "B": 8,
+      "process_points": 60.0
+     }
+    ],
+    "episode_step_limit": 1200,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     20,
+     60
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g1_crsemb_pour_50ml_into_graduated_cylinder",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "G1_omnipicker",
+  "sub_task": "pour_50ml_into_graduated_cylinder_g1",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "pour_50ml_into_graduated_cylinder_g1",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 600,
+      "checker": "PickUpOnGripper",
+      "B": 16,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 40,
+      "step": 1,
+      "step_out": 2700,
+      "checker": "PourVolume",
+      "B": 72,
+      "process_points": 80.0
+     }
+    ],
+    "episode_step_limit": 3300,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     80
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g1_crsemb_scrape_chicken_bone_into_bin",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "G1_omnipicker",
+  "sub_task": "scrape_chicken_bone_into_bin_g1",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "scrape_chicken_bone_into_bin_g1",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 15,
+      "step": 0,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 30.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 35,
+      "step": 1,
+      "step_out": 900,
+      "checker": "MixedRules",
+      "B": 24,
+      "process_points": 70.0
+     }
+    ],
+    "episode_step_limit": 1350,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     30,
+     70
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g1_crsemb_write_uppercase_letter_with_pen",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "G1_omnipicker",
+  "sub_task": "write_uppercase_letter_with_pen_g1",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "write_uppercase_letter_with_pen_g1",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 1200,
+      "checker": "PickUpOnGripper",
+      "B": 32,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 40,
+      "step": 1,
+      "step_out": 1200,
+      "checker": "InkOverlap",
+      "B": 32,
+      "process_points": 80.0
+     }
+    ],
+    "episode_step_limit": 2400,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     80
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsb90d_finemanip_insert_building_block",
+  "board": "finemanip",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_90d",
+  "sub_task": "insert_building_block",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "insert_building_block",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 600,
+      "checker": "PickUpOnGripper",
+      "B": 16,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 40,
+      "step": 1,
+      "step_out": 900,
+      "checker": "InBBox",
+      "B": 24,
+      "process_points": 80.0
+     }
+    ],
+    "episode_step_limit": 1500,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     80
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsb90d_finemanip_insert_coin_into_money_box",
+  "board": "finemanip",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_90d",
+  "sub_task": "insert_coin_into_money_box",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "insert_coin_into_money_box",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 20,
+      "step": 0,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 40.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 30,
+      "step": 1,
+      "step_out": 450,
+      "checker": "Inside",
+      "B": 12,
+      "process_points": 60.0
+     }
+    ],
+    "episode_step_limit": 900,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     40,
+     60
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsb90d_finemanip_insert_ethernet_cable",
+  "board": "finemanip",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_90d",
+  "sub_task": "insert_ethernet_cable",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "insert_ethernet_cable",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 600,
+      "checker": "PickUpOnGripper",
+      "B": 16,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 40,
+      "step": 1,
+      "step_out": 600,
+      "checker": "PlugInserted",
+      "B": 16,
+      "process_points": 80.0
+     }
+    ],
+    "episode_step_limit": 1200,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     80
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsb90d_finemanip_insert_straw_into_milk_tea_cup",
+  "board": "finemanip",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_90d",
+  "sub_task": "insert_straw_into_milk_tea_cup",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "insert_straw_into_milk_tea_cup",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 20,
+      "step": 0,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 40.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 30,
+      "step": 1,
+      "step_out": 450,
+      "checker": "MixedRules",
+      "B": 12,
+      "process_points": 60.0
+     }
+    ],
+    "episode_step_limit": 900,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     40,
+     60
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsb90d_finemanip_install_bearing_shaft_seat5mm",
+  "board": "finemanip",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_90d",
+  "sub_task": "install_bearing_shaft_seat5mm",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "install_bearing_shaft_progress",
+    "top": [
+     "ActionList",
+     3
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 15,
+      "step": 1,
+      "step_out": 600,
+      "checker": "ShaftInserted",
+      "B": 16,
+      "process_points": 30.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 25,
+      "step": 2,
+      "step_out": 600,
+      "checker": "PlaceOnRivet",
+      "B": 16,
+      "process_points": 50.0
+     }
+    ],
+    "episode_step_limit": 1650,
+    "has_score_checkers": true,
+    "has_score_layout": true,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     30,
+     50
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsb90d_finemanip_phone_packaging",
+  "board": "finemanip",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_90d",
+  "sub_task": "phone_packaging",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "phone_packaging_precise",
+    "top": [
+     "ActionList",
+     6
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 0,
+      "step_out": 600,
+      "checker": "PickUpOnGripper",
+      "B": 16,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 1,
+      "step_out": 450,
+      "checker": "MixedRules",
+      "B": 12,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 2,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 3,
+      "step_out": 750,
+      "checker": "MixedRules",
+      "B": 20,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 4,
+      "step_out": 750,
+      "checker": "PickUpOnGripper",
+      "B": 20,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 15,
+      "step": 5,
+      "step_out": 900,
+      "checker": "MixedRules",
+      "B": 24,
+      "process_points": 30.0
+     }
+    ],
+    "episode_step_limit": 3900,
+    "has_score_checkers": true,
+    "has_score_layout": true,
+    "profile_error": null,
+    "profile_weights": [
+     10,
+     20,
+     10,
+     20,
+     10,
+     30
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsb90d_finemanip_plug_charging_cable_into_phone",
+  "board": "finemanip",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_90d",
+  "sub_task": "plug_charging_cable_into_phone",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "plug_charging_cable_into_phone",
+    "top": [
+     "ActionList",
+     3
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 1,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 30,
+      "step": 2,
+      "step_out": 600,
+      "checker": "PlugInserted",
+      "B": 16,
+      "process_points": 60.0
+     }
+    ],
+    "episode_step_limit": 1500,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     20,
+     60
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsb90d_finemanip_put_the_cap_on_the_pen_new",
+  "board": "finemanip",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_90d",
+  "sub_task": "put_the_cap_on_the_pen_new",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "put_the_cap_on_the_pen_new",
+    "top": [
+     "ActionList",
+     4
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 0,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 1,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 20,
+      "step": 2,
+      "step_out": 900,
+      "checker": "PlugInserted",
+      "B": 24,
+      "process_points": 40.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 20,
+      "step": 3,
+      "step_out": 300,
+      "checker": "Ontop",
+      "B": 8,
+      "process_points": 40.0
+     }
+    ],
+    "episode_step_limit": 2100,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     10,
+     10,
+     40,
+     40
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsb90d_wbc_clean_the_blackboard",
+  "board": "wbc",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_90d",
+  "sub_task": "clean_the_blackboard",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "clean_the_blackboard",
+    "top": [
+     "ActionSetWaitAny",
+     3
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 0,
+      "step_out": 900,
+      "checker": "PickUpOnGripper",
+      "B": 24,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 1,
+      "step_out": 1200,
+      "checker": "RobotNearObject",
+      "B": 32,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 40,
+      "step": 2,
+      "step_out": 4800,
+      "checker": "Erased",
+      "B": 128,
+      "process_points": 80.0
+     }
+    ],
+    "episode_step_limit": 6000,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     10,
+     10,
+     80
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsb90d_wbc_deliver_tissues",
+  "board": "wbc",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_90d",
+  "sub_task": "sending_food",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "sending_food",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 1500,
+      "checker": "LiftUp",
+      "B": 40,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": 1,
+      "native_node": "ChassisAtTarget",
+      "points": 10,
+      "step": 1,
+      "step_out": 1500,
+      "checker": "ChassisAtTarget",
+      "B": 40,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": 1,
+      "native_node": "Ontop",
+      "points": 15,
+      "step": 2,
+      "step_out": 1500,
+      "checker": "Ontop",
+      "B": 40,
+      "process_points": 30.0
+     },
+     {
+      "concurrent_group": 1,
+      "native_node": "Ontop",
+      "points": 15,
+      "step": 3,
+      "step_out": 1500,
+      "checker": "Ontop",
+      "B": 40,
+      "process_points": 30.0
+     }
+    ],
+    "episode_step_limit": 3000,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     20,
+     30,
+     30
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsb90d_wbc_match_and_pick_from_conveyor",
+  "board": "wbc",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_90d",
+  "sub_task": "match_and_pick_from_conveyor",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "match_and_pick_from_conveyor",
+    "top": [
+     "ActionList",
+     3
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 900,
+      "checker": "PickUpOnGripper",
+      "B": 24,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 1,
+      "step_out": 1500,
+      "checker": "RobotNearObject",
+      "B": 40,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 30,
+      "step": 2,
+      "step_out": 600,
+      "checker": "InBBox",
+      "B": 16,
+      "process_points": 60.0
+     }
+    ],
+    "episode_step_limit": 3000,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     20,
+     60
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsb90d_wbc_open_the_door",
+  "board": "wbc",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_90d",
+  "sub_task": "open_the_door",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "open_the_door",
+    "top": [
+     "ActionList",
+     4
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 0,
+      "step_out": 1500,
+      "checker": "ChassisAtTarget",
+      "B": 40,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 1,
+      "step_out": 1500,
+      "checker": "PushPull",
+      "B": 40,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 2,
+      "step_out": 1500,
+      "checker": "ChassisAtTarget",
+      "B": 40,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 30,
+      "step": 3,
+      "step_out": 3600,
+      "checker": "PushPull",
+      "B": 96,
+      "process_points": 60.0
+     }
+    ],
+    "episode_step_limit": 8100,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     10,
+     10,
+     20,
+     60
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsb90d_wbc_open_the_roller_shutter",
+  "board": "wbc",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_90d",
+  "sub_task": "open_the_roller_shutter",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "open_the_roller_shutter",
+    "top": [
+     "ActionList",
+     5
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 0,
+      "step_out": 900,
+      "checker": "RobotNearObject",
+      "B": 24,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 1,
+      "step_out": 1500,
+      "checker": "PickUpOnGripper",
+      "B": 40,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 20,
+      "step": 2,
+      "step_out": 1800,
+      "checker": "PushPull",
+      "B": 48,
+      "process_points": 40.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 3,
+      "step_out": 2100,
+      "checker": "PushPull",
+      "B": 56,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 4,
+      "step_out": 750,
+      "checker": "ChassisAtTarget",
+      "B": 20,
+      "process_points": 20.0
+     }
+    ],
+    "episode_step_limit": 7050,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     10,
+     10,
+     40,
+     20,
+     20
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsb90d_wbc_pick_up_trash",
+  "board": "wbc",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_90d",
+  "sub_task": "pick_up_trash_wbc",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "pick_up_trash_wbc",
+    "top": [
+     "ActionList",
+     7
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 0,
+      "step_out": 900,
+      "checker": "RobotNearObject",
+      "B": 24,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 1,
+      "step_out": 900,
+      "checker": "PickUpOnGripper",
+      "B": 24,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAll",
+      "points": 5,
+      "step": 2,
+      "step_out": 750,
+      "checker": "RobotNearObject",
+      "B": 20,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 3,
+      "step_out": 900,
+      "checker": "PickUpOnGripper",
+      "B": 24,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 4,
+      "step_out": 900,
+      "checker": "RobotNearObject",
+      "B": 24,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 5,
+      "step_out": 300,
+      "checker": "PushPull",
+      "B": 8,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAll",
+      "points": 15,
+      "step": 6,
+      "step_out": 1800,
+      "checker": "Inside",
+      "B": 48,
+      "process_points": 30.0
+     }
+    ],
+    "episode_step_limit": 6450,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     10,
+     10,
+     10,
+     10,
+     10,
+     20,
+     30
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsb90d_wbc_put_the_plates_on_the_shelf",
+  "board": "wbc",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_90d",
+  "sub_task": "put_the_plates_on_the_shelf",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "put_the_plates_on_the_shelf",
+    "top": [
+     "ActionList",
+     4
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 0,
+      "step_out": 1500,
+      "checker": "PickUpOnGripper",
+      "B": 40,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 1,
+      "step_out": 1500,
+      "checker": "PickUpOnGripper",
+      "B": 40,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 2,
+      "step_out": 3000,
+      "checker": "RobotNearObject",
+      "B": 80,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": 1,
+      "native_node": "InBBox",
+      "points": 15,
+      "step": 3,
+      "step_out": 1800,
+      "checker": "InBBox",
+      "B": 48,
+      "process_points": 30.0
+     },
+     {
+      "concurrent_group": 1,
+      "native_node": "InBBox",
+      "points": 15,
+      "step": 4,
+      "step_out": 1800,
+      "checker": "InBBox",
+      "B": 48,
+      "process_points": 30.0
+     }
+    ],
+    "episode_step_limit": 7800,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     10,
+     10,
+     20,
+     30,
+     30
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsb90d_wbc_transport_cartons_to_table",
+  "board": "wbc",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_90d",
+  "sub_task": "transport_cartons_to_table_wbc",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "transport_cartons_to_table_wbc_milestones",
+    "top": [
+     "ActionList",
+     4
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 0,
+      "step_out": 3000,
+      "checker": "OnTopCount",
+      "B": 80,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 1,
+      "step_out": 3000,
+      "checker": "OnTopCount",
+      "B": 80,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 20,
+      "step": 2,
+      "step_out": 3600,
+      "checker": "InBBox",
+      "B": 96,
+      "process_points": 40.0
+     },
+     {
+      "concurrent_group": 1,
+      "native_node": "InBBox",
+      "points": 5,
+      "step": 3,
+      "step_out": 6000,
+      "checker": "InBBox",
+      "B": 160,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": 1,
+      "native_node": "InBBox",
+      "points": 5,
+      "step": 4,
+      "step_out": 6000,
+      "checker": "InBBox",
+      "B": 160,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": 1,
+      "native_node": "InBBox",
+      "points": 5,
+      "step": 5,
+      "step_out": 6000,
+      "checker": "InBBox",
+      "B": 160,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": 1,
+      "native_node": "InBBox",
+      "points": 5,
+      "step": 6,
+      "step_out": 6000,
+      "checker": "InBBox",
+      "B": 160,
+      "process_points": 10.0
+     }
+    ],
+    "episode_step_limit": 15600,
+    "has_score_checkers": true,
+    "has_score_layout": true,
+    "profile_error": null,
+    "profile_weights": [
+     10,
+     10,
+     40,
+     10,
+     10,
+     10,
+     10
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsbwuji_dexmanip_cloth_hanger",
+  "board": "dexmanip",
+  "runtime": "libuipc",
+  "robot_cfg": "G2_crsB_wuji",
+  "sub_task": "cloth_hanger",
+  "num_instances": 10,
+  "variants": [
+   {
+    "layout": "cloth_hanger",
+    "episode_budget": true,
+    "step_out": 2400,
+    "B": 64,
+    "stages": [
+     {
+      "step": 0,
+      "checker": "WujiLiftCloth",
+      "process_points": 10
+     },
+     {
+      "step": 1,
+      "checker": "WujiLiftHanger",
+      "process_points": 10
+     },
+     {
+      "step": 2,
+      "checker": "WujiHangerNearCollar",
+      "process_points": 10
+     },
+     {
+      "step": 3,
+      "checker": "WujiHangerInserted",
+      "process_points": 30
+     },
+     {
+      "step": 4,
+      "checker": "WujiGarmentHung",
+      "process_points": 40
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsbwuji_dexmanip_cover_cup_lid",
+  "board": "dexmanip",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_wuji",
+  "sub_task": "cover_cup_lid",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "cover_cup_lid",
+    "top": [
+     "ActionList",
+     3
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 0,
+      "step_out": 1500,
+      "checker": "PickUpOnGripper",
+      "B": 40,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 15,
+      "step": 1,
+      "step_out": 1500,
+      "checker": "Ontop",
+      "B": 40,
+      "process_points": 30.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 30,
+      "step": 2,
+      "step_out": 600,
+      "checker": "MixedRules",
+      "B": 16,
+      "process_points": 60.0
+     }
+    ],
+    "episode_step_limit": 3600,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     10,
+     30,
+     60
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsbwuji_dexmanip_drawstring_bag",
+  "board": "dexmanip",
+  "runtime": "libuipc",
+  "robot_cfg": "G2_crsB_wuji",
+  "sub_task": "drawstring_bag",
+  "num_instances": 10,
+  "variants": [
+   {
+    "layout": "drawstring_bag",
+    "episode_budget": true,
+    "step_out": 2400,
+    "B": 64,
+    "stages": [
+     {
+      "step": 0,
+      "checker": "WujiBagPlaced",
+      "process_points": 10
+     },
+     {
+      "step": 1,
+      "checker": "WujiBottle1InBin",
+      "process_points": 5
+     },
+     {
+      "step": 2,
+      "checker": "WujiBottle2InBin",
+      "process_points": 5
+     },
+     {
+      "step": 3,
+      "checker": "WujiBothBottlesInBag",
+      "process_points": 30
+     },
+     {
+      "step": 4,
+      "checker": "WujiBagCinched",
+      "process_points": 50
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsbwuji_dexmanip_fold_cloth",
+  "board": "dexmanip",
+  "runtime": "libuipc",
+  "robot_cfg": "G2_crsB_wuji",
+  "sub_task": "fold_cloth",
+  "num_instances": 10,
+  "variants": [
+   {
+    "layout": "fold_cloth",
+    "episode_budget": true,
+    "step_out": 2400,
+    "B": 64,
+    "stages": [
+     {
+      "step": 0,
+      "checker": "WujiFoldLeftSide",
+      "process_points": 25
+     },
+     {
+      "step": 1,
+      "checker": "WujiFoldRightSide",
+      "process_points": 25
+     },
+     {
+      "step": 2,
+      "checker": "WujiFoldHemToCollar",
+      "process_points": 50
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsbwuji_dexmanip_pick_up_a_package",
+  "board": "dexmanip",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_wuji",
+  "sub_task": "pick_up_a_package",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "pick_up_a_package",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 15,
+      "step": 0,
+      "step_out": 600,
+      "checker": "LiftUp",
+      "B": 16,
+      "process_points": 30.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetSuccessFirst",
+      "points": 35,
+      "step": 1,
+      "step_out": 600,
+      "checker": "MixedRules",
+      "B": 16,
+      "process_points": 70.0
+     }
+    ],
+    "episode_step_limit": 1200,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     30,
+     70
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsbwuji_dexmanip_rubik_cube_solve",
+  "board": "dexmanip",
+  "runtime": "mujoco",
+  "robot_cfg": "G2_crsB_wuji",
+  "sub_task": "rubik_cube_solve_2turn",
+  "num_instances": 10,
+  "variants": [
+   {
+    "layout": "rubik_cube_solve_2turn",
+    "episode_budget": true,
+    "step_out": 1800,
+    "B": 48,
+    "stages": [
+     {
+      "step": 0,
+      "checker": "PickUp",
+      "process_points": 20
+     },
+     {
+      "step": 1,
+      "checker": "Turn",
+      "process_points": 30
+     },
+     {
+      "step": 2,
+      "checker": "Solve",
+      "process_points": 50
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsbwuji_dexmanip_stack_bowls",
+  "board": "dexmanip",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_wuji",
+  "sub_task": "stack_bowls_wuji",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "stack_bowls_pickup",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 600,
+      "checker": "PickUpOnGripper",
+      "B": 16,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 40,
+      "step": 1,
+      "step_out": 1800,
+      "checker": "Stack",
+      "B": 48,
+      "process_points": 80.0
+     }
+    ],
+    "episode_step_limit": 2400,
+    "has_score_checkers": true,
+    "has_score_layout": true,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     80
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsbwuji_dexmanip_take_the_book",
+  "board": "dexmanip",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_wuji",
+  "sub_task": "take_the_book",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "take_the_book",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 20,
+      "step": 0,
+      "step_out": 1800,
+      "checker": "Rotated",
+      "B": 48,
+      "process_points": 40.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 30,
+      "step": 1,
+      "step_out": 1800,
+      "checker": "MixedRules",
+      "B": 48,
+      "process_points": 60.0
+     }
+    ],
+    "episode_step_limit": 3600,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     40,
+     60
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsbwuji_dexmanip_take_the_scissors",
+  "board": "dexmanip",
+  "runtime": "isaac",
+  "robot_cfg": "G2_crsB_wuji",
+  "sub_task": "take_the_scissors",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "take_the_scissors",
+    "top": [
+     "ActionList",
+     3
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 0,
+      "step_out": 900,
+      "checker": "PickUpOnGripper",
+      "B": 24,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 20,
+      "step": 1,
+      "step_out": 1200,
+      "checker": "ScissorsHandleInserted",
+      "B": 32,
+      "process_points": 40.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 25,
+      "step": 2,
+      "step_out": 1200,
+      "checker": "ScissorsHandleActuated",
+      "B": 32,
+      "process_points": 50.0
+     }
+    ],
+    "episode_step_limit": 3300,
+    "has_score_checkers": true,
+    "has_score_layout": true,
+    "profile_error": null,
+    "profile_weights": [
+     10,
+     40,
+     50
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2crsbwuji_dexmanip_wok_flip",
+  "board": "dexmanip",
+  "runtime": "newton",
+  "robot_cfg": "G2_crsB_wuji",
+  "sub_task": "wok_flip",
+  "num_instances": 10,
+  "variants": [
+   {
+    "layout": "wok_flip",
+    "episode_budget": true,
+    "step_out": 600,
+    "B": 16,
+    "stages": [
+     {
+      "step": 0,
+      "checker": "stable_lift",
+      "process_points": 30
+     },
+     {
+      "step": 1,
+      "checker": "food_toss",
+      "process_points": 70
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2op_crsemb_hang_cups_on_cup_tree",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "G2_omnipicker",
+  "sub_task": "hang_cups_on_cup_tree_g2_omnipicker",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "hang_cups_on_cup_tree_g2_omnipicker",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 40,
+      "step": 1,
+      "step_out": 750,
+      "checker": "Hang",
+      "B": 20,
+      "process_points": 80.0
+     }
+    ],
+    "episode_step_limit": 1200,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     80
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2op_crsemb_keyboard_keycap_swap",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "G2_omnipicker",
+  "sub_task": "keyboard_keycap_swap_g2_omnipicker",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "keyboard_keycap_swap_g2_omnipicker",
+    "top": [
+     "ActionList",
+     3
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 5,
+      "step": 0,
+      "step_out": 900,
+      "checker": "PickUpOnGripper",
+      "B": 24,
+      "process_points": 10.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 20,
+      "step": 1,
+      "step_out": 900,
+      "checker": "LiftUp",
+      "B": 24,
+      "process_points": 40.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 25,
+      "step": 2,
+      "step_out": 2700,
+      "checker": "PlaceOnRivet",
+      "B": 72,
+      "process_points": 50.0
+     }
+    ],
+    "episode_step_limit": 4500,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     10,
+     40,
+     50
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2op_crsemb_open_short_trash_can_and_throw_garbage",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "G2_omnipicker",
+  "sub_task": "open_short_trash_can_and_throw_garbage_multi_robot",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "open_short_trash_can_and_throw_garbage_multi_robot",
+    "top": [
+     "ActionList",
+     3
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 450,
+      "checker": "PushPull",
+      "B": 12,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 1,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 30,
+      "step": 2,
+      "step_out": 300,
+      "checker": "Inside",
+      "B": 8,
+      "process_points": 60.0
+     }
+    ],
+    "episode_step_limit": 1200,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     20,
+     60
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2op_crsemb_pour_50ml_into_graduated_cylinder",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "G2_omnipicker",
+  "sub_task": "pour_50ml_into_graduated_cylinder_g2_omnipicker",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "pour_50ml_into_graduated_cylinder_g2_omnipicker",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 600,
+      "checker": "PickUpOnGripper",
+      "B": 16,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 40,
+      "step": 1,
+      "step_out": 2700,
+      "checker": "PourVolume",
+      "B": 72,
+      "process_points": 80.0
+     }
+    ],
+    "episode_step_limit": 3300,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     80
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2op_crsemb_scrape_chicken_bone_into_bin",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "G2_omnipicker",
+  "sub_task": "scrape_chicken_bone_into_bin_g2_omnipicker",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "scrape_chicken_bone_into_bin_g2_omnipicker",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 15,
+      "step": 0,
+      "step_out": 450,
+      "checker": "PickUpOnGripper",
+      "B": 12,
+      "process_points": 30.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 35,
+      "step": 1,
+      "step_out": 900,
+      "checker": "MixedRules",
+      "B": 24,
+      "process_points": 70.0
+     }
+    ],
+    "episode_step_limit": 1350,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     30,
+     70
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "task": "g2op_crsemb_write_uppercase_letter_with_pen",
+  "board": "crsemb",
+  "runtime": "isaac",
+  "robot_cfg": "G2_omnipicker",
+  "sub_task": "write_uppercase_letter_with_pen_g2_omnipicker",
+  "n_instance_dirs": 20,
+  "num_instances": 20,
+  "first_sampled_id": 0,
+  "sampled_ids": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "variants": [
+   {
+    "layout": "write_uppercase_letter_with_pen_g2_omnipicker",
+    "top": [
+     "ActionList",
+     2
+    ],
+    "stages": [
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 10,
+      "step": 0,
+      "step_out": 1200,
+      "checker": "PickUpOnGripper",
+      "B": 32,
+      "process_points": 20.0
+     },
+     {
+      "concurrent_group": null,
+      "native_node": "ActionSetWaitAny",
+      "points": 40,
+      "step": 1,
+      "step_out": 1200,
+      "checker": "InkOverlap",
+      "B": 32,
+      "process_points": 80.0
+     }
+    ],
+    "episode_step_limit": 2400,
+    "has_score_checkers": true,
+    "has_score_layout": false,
+    "profile_error": null,
+    "profile_weights": [
+     20,
+     80
+    ],
+    "instances": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "problems": [
+     "problem1"
+    ],
+    "instructions_per_instance": [
+     1
+    ]
+   }
+  ]
+ }
+]

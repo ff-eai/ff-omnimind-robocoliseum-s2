@@ -1,0 +1,14 @@
+Review-only license
+
+Copyright (c) 2026 FF EAI Robotics Ecosystem Inc. All rights reserved.
+
+This license covers the files that carry the copyright line of FF EAI Robotics Ecosystem Inc. ("FF"), and FF's
+changes to the files marked "Modified by FF EAI Robotics Ecosystem Inc.".
+
+FF permits the organizers of RoboColiseum to use, copy and run these files only to review and reproduce the result
+of RoboColiseum Season II evaluation job 1891 (UUID 722fb5d0-a9f5-4163-95e7-108dd85c9f9a). No other use is permitted. In
+particular, the files may not be published, given to anyone outside the review, or used to develop, train or
+evaluate any other system. Please delete all copies when the review is complete.
+
+The files are provided "as is", without warranty of any kind. The other files are under the Apache License 2.0
+(LICENSE, NOTICE).

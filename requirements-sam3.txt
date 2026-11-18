@@ -1,0 +1,11 @@
+# SAM 3 service, Python 3.12.3, one CUDA GPU (versions of the evaluated run)
+# plus the SAM 3 code: https://github.com/Max-Fu/sam3 at 6fe87d64a5beb9084923d7a9e002741178635b09 (pip install -e)
+torch==2.13.0+cu129
+torchvision==0.28.0+cu129
+transformers==5.19.0
+huggingface-hub==2.2.0
+fastapi==0.136.3
+uvicorn==0.54.0
+pydantic==2.14.1
+numpy==1.26.4
+Pillow==13.0.0
