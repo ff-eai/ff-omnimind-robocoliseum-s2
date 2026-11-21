@@ -4,22 +4,12 @@ side = "right"
 TOSS = "pop"
 VMAX = 9.0
 report["segments"] = list(api.task_info().get("segments") or [])
-RIM_C = np.array([0.9949, 0.0, 1.050])
-RIM_R = 0.16
-H_NEAR = np.array([0.800, 0.0, 1.030])
-H_END = np.array([0.661, 0.0, 1.039])
-GRIP_X = 0.756
 PALM_UP = np.column_stack([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
 
 
-def handle_point(x):
-    t = (H_NEAR[0] - x) / (H_NEAR[0] - H_END[0])
-    return H_NEAR + t * (H_END - H_NEAR)
-
-
-def best_mask(text, lo, hi):
+def best_mask(text, lo, hi, cam="head"):
     best = None
-    for item in api.segment(text, "head"):
+    for item in api.segment(text, cam):
         area = int(item["mask"].sum())
         if lo <= area <= hi and (best is None or item["score"] > best["score"]):
             best = item
@@ -29,52 +19,147 @@ def best_mask(text, lo, hi):
 view = api.camera("head")
 
 
-def fit_offset():
-    if view.model is None or view.T_base_optical is None:
-        return 0.0, 0.0, None, {}
+HANDLE_TEXT = ("pan handle", "wok handle", "handle")
+MASK_AREA = {"head": (150, 4000), "hand_right": (300, 40000), "hand_left": (300, 40000)}
+
+
+def view_plane(cam, item):
+    v, u = np.nonzero(item["mask"])
+    if u.size < 40:
+        return None
+    vw = api.camera(cam)
+    r = vw.model.pixel_rays(u.astype(float), v.astype(float))
+    r = r[np.all(np.isfinite(r), axis=1)]
+    xy = r[:, :2]
+    c = np.median(xy, axis=0)
+    Uu, S, Vt = np.linalg.svd(xy - c, full_matrices=False)
+    d = Vt[0]
+    t = (xy - c) @ d
+    a = np.array([c[0] + d[0] * float(np.percentile(t, 2)), c[1] + d[1] * float(np.percentile(t, 2)), 1.0])
+    b = np.array([c[0] + d[0] * float(np.percentile(t, 98)), c[1] + d[1] * float(np.percentile(t, 98)), 1.0])
+    R = vw.T_base_optical[:3, :3]
+    n = R @ np.cross(a, b)
+    n = n / np.linalg.norm(n)
+    rays = (r / np.linalg.norm(r, axis=1, keepdims=True)) @ R.T
+    return {"n": n, "o": vw.T_base_optical[:3, 3].copy(), "rays": rays, "elong": float(S[0] / max(float(S[1]), 1e-9)),
+            "w": float(item["score"]), "xy": xy, "c": c, "d": d, "R": R}
+
+
+def fit_axis(planes):
+    keys = sorted(planes)
+    N = np.array([planes[k]["n"] for k in keys])
+    W = np.array([planes[k]["w"] for k in keys])
+    M = (N * W[:, None]).T @ N
+    evals, evecs = np.linalg.eigh(M)
+    L = evecs[:, 0]
+    if L[0] < 0:
+        L = -L
+    A = np.vstack([N * W[:, None], L[None, :]])
+    rhs = np.concatenate([np.array([float(planes[k]["n"] @ planes[k]["o"]) for k in keys]) * W, [0.0]])
+    X0 = np.linalg.lstsq(A, rhs, rcond=None)[0]
+    res = {k: float(planes[k]["n"] @ (X0 - planes[k]["o"])) for k in keys}
+    return X0, L, res, float(evals[1])
+
+
+def ray_params(X0, L, o, rays):
+    w0 = X0 - o
+    bb = rays @ L
+    dd = float(L @ w0)
+    e = rays @ w0
+    den = np.maximum(1.0 - bb * bb, 1e-9)
+    sv = (bb * e - dd) / den
+    tv = (e - bb * dd) / den
+    gap = np.linalg.norm((X0[None, :] + sv[:, None] * L[None, :]) - (o[None, :] + tv[:, None] * rays), axis=1)
+    return sv, gap
+
+
+def measure_handle():
+    head = api.camera("head")
+    if head.model is None or head.T_base_optical is None:
+        return None
+    planes = {}
+    for cam in ("head", "hand_right", "hand_left"):
+        vw = api.camera(cam)
+        if vw.model is None or vw.T_base_optical is None:
+            continue
+        lo, hi = MASK_AREA[cam]
+        item = None
+        for text in HANDLE_TEXT:
+            item = best_mask(text, lo, hi, cam)
+            if item is not None and item["score"] >= 0.2:
+                break
+        if item is None or item["score"] < 0.2:
+            continue
+        p = view_plane(cam, item)
+        if p is not None and p["elong"] >= 3.0:
+            planes[cam] = p
+    out = {"views": sorted(planes)}
+    if "head" not in planes or len(planes) < 2:
+        return out
+    X0, L, res, ev = fit_axis(planes)
+    if len(planes) > 2:
+        worst = max(res, key=lambda k: abs(res[k]))
+        if abs(res[worst]) > 0.012 and worst != "head":
+            out["dropped"] = [worst, round(1000.0 * res[worst], 1)]
+            planes.pop(worst)
+            X0, L, res, ev = fit_axis(planes)
+    out["plane_res_mm"] = {k: round(1000.0 * v, 1) for k, v in res.items()}
+    out["cond"] = round(ev, 3)
+    out["views"] = sorted(planes)
+    if float(abs(L[0])) < 0.5:
+        out["error"] = "axis not toward the robot"
+        return out
+    if ev < 0.02:
+        out["error"] = "views too alike"
+        return out
+    sv, gap = ray_params(X0, L, planes["head"]["o"], planes["head"]["rays"])
+    keep = gap < 0.03
+    if int(keep.sum()) < 30:
+        out["error"] = "head rays off the axis"
+        return out
+    s_tip, s_root = float(np.percentile(sv[keep], 0.5)), float(np.percentile(sv[keep], 98))
+    tips = [s_tip]
+    for k in planes:
+        if k != "head":
+            s2, g2 = ray_params(X0, L, planes[k]["o"], planes[k]["rays"])
+            if int((g2 < 0.03).sum()) >= 30:
+                tips.append(float(np.percentile(s2[g2 < 0.03], 0.5)))
+    s_tip = float(np.median(tips))
+    tip = X0 + s_tip * L
+    ph = planes["head"]
+    tt = (ph["xy"] - ph["c"]) @ ph["d"]
+    ww = (ph["xy"] - ph["c"]) @ np.array([-ph["d"][1], ph["d"][0]])
+    edges = np.linspace(float(np.percentile(tt, 5)), float(np.percentile(tt, 95)), 11)
+    spans = []
+    for i in range(10):
+        sel = (tt >= edges[i]) & (tt < edges[i + 1])
+        if int(sel.sum()) >= 8:
+            spans.append(float(np.percentile(ww[sel], 97) - np.percentile(ww[sel], 3)))
+    mid = X0 + 0.5 * (s_tip + s_root) * L
+    depth = float(ph["R"][:, 2] @ (mid - ph["o"]))
+    radius = 0.5 * float(np.median(spans)) * depth if spans else float(np.percentile(gap[keep], 95))
+    out["radius_gap"] = float(np.percentile(gap[keep], 95))
+    radius = float(np.clip(radius, 0.004, 0.03))
+    out.update({"tip": tip, "dir": L, "free_len": s_root - s_tip, "radius": radius})
     pan = best_mask("frying pan", 2500, 40000)
-    handle = best_mask("pan handle", 150, 4000)
-    obs = {}
     if pan is not None and pan["score"] >= 0.2:
         v, u = np.nonzero(pan["mask"])
-        obs["pan"] = (float(np.percentile(u, 0.5)), float(np.percentile(u, 99.5)), float(np.percentile(v, 0.5)))
-    if handle is not None and handle["score"] >= 0.2:
-        v, u = np.nonzero(handle["mask"])
-        bottom = v >= v.max() - 5
-        obs["end"] = (float(np.mean(u[bottom])), float(v.max()))
-    if not obs:
-        return 0.0, 0.0, None, obs
-    grid = np.arange(-0.07, 0.0701, 0.002)
-    DX, DY = np.meshgrid(grid, grid, indexing="ij")
-    cand = np.column_stack([DX.ravel(), DY.ravel()])
-    n = cand.shape[0]
-    ang = np.linspace(0.0, 2.0 * math.pi, 48, endpoint=False)
-    rim = RIM_C + RIM_R * np.column_stack([np.cos(ang), np.sin(ang), np.zeros_like(ang)])
-    cost = np.zeros(n)
-    if "pan" in obs:
-        pts = (rim[None, :, :] - np.column_stack([cand, np.zeros(n)])[:, None, :]).reshape(-1, 3)
-        uv, vis = view.project_base_points(pts)
-        uv = uv.reshape(n, -1, 2)
-        cost += (uv[:, :, 0].min(axis=1) - obs["pan"][0]) ** 2 + (uv[:, :, 0].max(axis=1) - obs["pan"][1]) ** 2
-        cost += (uv[:, :, 1].min(axis=1) - obs["pan"][2]) ** 2
-    if "end" in obs:
-        pts = H_END[None, :] - np.column_stack([cand, np.zeros(n)])
-        uv, vis = view.project_base_points(pts)
-        cost += 2.0 * ((uv[:, 0] - obs["end"][0]) ** 2 + (uv[:, 1] - obs["end"][1]) ** 2)
-    k = int(np.argmin(cost))
-    terms = (3 if "pan" in obs else 0) + (4 if "end" in obs else 0)
-    fit = {"dx": round(float(cand[k, 0]), 4), "dy": round(float(cand[k, 1]), 4), "rms_px": round(float(math.sqrt(cost[k] / max(1, terms))), 2)}
-    if fit["rms_px"] <= 8.0 and abs(cand[k, 0]) < 0.069 and abs(cand[k, 1]) < 0.069:
-        return float(cand[k, 0]), float(cand[k, 1]), fit, obs
-    return 0.0, 0.0, fit, obs
+        v_top = float(np.percentile(v, 0.5))
+        u_top = float(np.median(u[v <= v_top + 3]))
+        out["pan"] = (float(np.percentile(u, 0.5)), float(np.percentile(u, 99.5)), v_top)
+        ray = head.model.pixel_rays(np.array([u_top]), np.array([v_top]))[0]
+        ray = head.T_base_optical[:3, :3] @ (ray / np.linalg.norm(ray))
+        o = head.T_base_optical[:3, 3]
+        z_h = float((X0 + s_root * L)[2])
+        if ray[2] < -1e-3:
+            out["top_point"] = o + ray * ((z_h - o[2]) / ray[2])
+    return out
 
 
-def rim_rise_px(shift, lift):
-    ang = np.linspace(0.0, 2.0 * math.pi, 48, endpoint=False)
-    rim = RIM_C - shift + RIM_R * np.column_stack([np.cos(ang), np.sin(ang), np.zeros_like(ang)])
-    uv0, vis0 = view.project_base_points(rim)
-    uv1, vis1 = view.project_base_points(rim + np.array([0.0, 0.0, lift]))
-    return float(uv0[:, 1].min() - uv1[:, 1].min()), float(uv1[:, 1].min())
+def top_rise_px(top_point, lift):
+    uv0, vis0 = view.project_base_points(np.array([top_point]))
+    uv1, vis1 = view.project_base_points(np.array([top_point + np.array([0.0, 0.0, lift])]))
+    return float(uv0[0, 1] - uv1[0, 1]), float(uv1[0, 1])
 
 
 def pan_top_row(width0):
@@ -89,34 +174,35 @@ def pan_top_row(width0):
     return float(np.percentile(v, 0.5))
 
 
-VARIANTS = [(gx, rise, roll, so, yaw) for gx in (GRIP_X, 0.735, 0.715) for yaw in (-0.40, 0.0) for rise, roll, so in
-            ((0.029, 0.0, 0.14), (0.026, -0.15, 0.13), (0.029, 0.15, 0.14))]
-VARIANTS = [(0.735, 0.029, 0.0, 0.18, -0.40), (0.725, 0.029, 0.0, 0.18, -0.40)] + VARIANTS
+PALM_UP_OFF = (0.018, 0.015)
+VARIANTS = [(d, rise, roll, so, yaw) for d in (0.095, 0.074, 0.054) for yaw in (-0.40, 0.0) for rise, roll, so in
+            ((PALM_UP_OFF[0], 0.0, 0.14), (PALM_UP_OFF[1], -0.15, 0.13), (PALM_UP_OFF[0], 0.15, 0.14))]
+VARIANTS = [(0.074, PALM_UP_OFF[0], 0.0, 0.18, -0.40), (0.064, PALM_UP_OFF[0], 0.0, 0.18, -0.40)] + VARIANTS
 APP_DX = -0.05
 BELOW_DZ = -0.028
 SLIDE_ROWS = 32
 GRIP_Q = np.array([0.23, 0.06, 1.0, 0.09, 1.56, 0.22, 1.06, 0.99, 1.55, 0.07, 1.29, 1.51, 1.56, 0.05, 1.3, 1.53, 1.56, 0.21, 1.55, 1.18])
 APPROACH = wuji_open()
 APPROACH[0] = 0.60
-Q_GOOD = np.array([-0.601, -1.546, 1.232, -1.263, 2.09, 0.803, -0.402])
+Q_SEED = np.array([-0.922, -1.663, 1.308, -1.448, 1.553, 0.822, -0.135])
 APPROACH_1 = "side"
 KIN = api.episode.kin
 
 
-def plan_grasp(m, shift, tag, skip=(), hold=40, max_rows=None, approach="side"):
+def plan_grasp(m, hd, tag, skip=(), hold=100, max_rows=None, approach="side"):
     errors = []
-    for gx, rise, roll, side_off, yaw in VARIANTS:
-        if (gx, rise, roll, side_off, yaw) in skip:
+    yaw_h = math.atan2(float(hd["dir"][1]), float(hd["dir"][0]))
+    for gx, rise0, roll, side_off, yaw in VARIANTS:
+        if (gx, rise0, roll, side_off, yaw) in skip:
             continue
-        hp = handle_point(gx) - shift
-        rot = rotz(yaw)[:3, :3] @ PALM_UP if yaw else PALM_UP
+        hp = hd["tip"] + gx * hd["dir"]
+        rise = hd["radius"] + rise0
+        rot = rotz(yaw_h + yaw)[:3, :3] @ PALM_UP
         rot = rot @ roty(roll)[:3, :3] if roll else rot
         grasp = pose(hp + np.array([0.0, 0.0, rise]), rot)
         below = offset(grasp, dz=BELOW_DZ)
         if approach == "side":
             pre = offset(below, dx=APP_DX if side_off > 0.15 else 0.0, dy=-side_off)
-        elif approach == "front":
-            pre = offset(below, dx=-0.10)
         else:
             pre = offset(below, dz=-0.07)
         trial = m.copy()
@@ -127,7 +213,7 @@ def plan_grasp(m, shift, tag, skip=(), hold=40, max_rows=None, approach="side"):
                 r = KIN.solve(side, T, seed, pos_now, frame="grasp", restarts=0, max_iterations=200,
                               position_tolerance_m=0.002, rotation_tolerance_rad=math.radians(1.0))
                 return np.asarray(r.joints, dtype=float) if r.ok else None
-            q_grasp = ik(grasp, Q_GOOD)
+            q_grasp = ik(grasp, Q_SEED)
             q_below = ik(below, q_grasp) if q_grasp is not None else None
             q_pre = ik(pre, q_below) if q_below is not None else None
             q_lift = ik(offset(grasp, dz=0.10), q_grasp) if q_grasp is not None else None
@@ -187,15 +273,15 @@ def plan_grasp(m, shift, tag, skip=(), hold=40, max_rows=None, approach="side"):
                 trial.tcp(side, offset(grasp, dz=0.10), linear=True, limits=Limits(linear_velocity=0.16))
                 trial.hold(hold)
         except MotionError as error:
-            errors.append(f"{gx}/{rise}/{roll}/{yaw}: {str(error)[:80]}")
+            errors.append(f"{gx}/{rise0}/{roll}/{yaw}: {str(error)[:80]}")
             continue
         if max_rows is not None and trial.rows > max_rows:
-            errors.append(f"{gx}/{rise}/{roll}/{yaw}: {trial.rows} rows > {max_rows} left")
+            errors.append(f"{gx}/{rise0}/{roll}/{yaw}: {trial.rows} rows > {max_rows} left")
             continue
         m.adopt(trial)
-        report[f"variant_{tag}"] = [gx, rise, roll, side_off, yaw]
+        report[f"variant_{tag}"] = [gx, round(rise, 4), roll, side_off, yaw]
         report[f"grip_point_{tag}"] = [round(float(v), 4) for v in hp]
-        return {"grasp": grasp, "hp": hp, "variant": (gx, rise, roll, side_off, yaw)}
+        return {"grasp": grasp, "hp": hp, "variant": (gx, rise0, roll, side_off, yaw)}
     report[f"plan_errors_{tag}"] = errors[:6]
     return None
 
@@ -209,33 +295,42 @@ except MotionError:
     staged = "hand_only"
 report["staged"] = staged
 stage.send(label="stage_hand")
-dx, dy, fit, obs = fit_offset()
-report["obs"] = {k: [round(x, 1) for x in val] for k, val in obs.items()}
-report["fit"] = fit
-report["offset"] = [round(dx, 4), round(dy, 4)]
-top0 = obs["pan"][2] if "pan" in obs else None
-width0 = (obs["pan"][1] - obs["pan"][0]) if "pan" in obs else None
+
+
+def handle_report(hd):
+    out = {}
+    for k, val in (hd or {}).items():
+        if isinstance(val, np.ndarray):
+            out[k] = [round(float(x), 4) for x in val]
+        elif isinstance(val, tuple):
+            out[k] = [round(float(x), 1) for x in val]
+        elif isinstance(val, float):
+            out[k] = round(val, 4)
+        else:
+            out[k] = val
+    return out
+
+
+hd = measure_handle()
+report["handle_1"] = handle_report(hd)
+if hd is None or "tip" not in hd:
+    api.motion().hold(2).send(label="look_again")
+    hd = measure_handle()
+    report["handle_1b"] = handle_report(hd)
+if hd is not None and "tip" not in hd:
+    hd = None
+top0 = hd["pan"][2] if hd is not None and "pan" in hd else None
+width0 = (hd["pan"][1] - hd["pan"][0]) if hd is not None and "pan" in hd else None
 lifted = False
 grip = None
 used = []
-for attempt in (1, 2):
+for attempt in (1,):
     m = api.motion()
-    if attempt == 2:
-        m.hand(side, APPROACH, rows=8)
-        m.tcp(side, offset(api.grasp_pose(side), dz=-0.04, dy=-0.06), linear=True, limits=Limits(linear_velocity=0.3))
-        m.send(label="release_retry", settle=4)
-        ndx, ndy, nfit, nobs = fit_offset()
-        report["fit_retry"] = nfit
-        if nfit is not None and nfit["rms_px"] <= 8.0:
-            dx, dy = ndx, ndy
-        if "pan" in nobs:
-            top0, width0 = nobs["pan"][2], nobs["pan"][1] - nobs["pan"][0]
-        m = api.motion()
-    blocked = attempt == 2 and float(np.linalg.norm(report.get("reach_err_mm_1") or [0.0])) > 30.0
-    way = APPROACH_1 if attempt == 1 else ("front" if blocked else APPROACH_1)
+    way = APPROACH_1
     report[f"approach_{attempt}"] = way
-    grip = plan_grasp(m, np.array([dx, dy, 0.0]), attempt, skip=used if not blocked else (), hold=40 if attempt == 1 else 26,
-                      max_rows=None if attempt == 1 else api.rows_left() - 14, approach=way)
+    if hd is None:
+        break
+    grip = plan_grasp(m, hd, attempt, skip=used, hold=100, approach=way)
     if grip is None:
         break
     used.append(grip["variant"])
@@ -245,10 +340,10 @@ for attempt in (1, 2):
     got = api.grasp_pose(side)[:3, 3]
     report[f"reach_err_mm_{attempt}"] = [round(1000.0 * float(v), 1) for v in (got - want)]
     report[f"arm_q_{attempt}"] = [round(float(v), 3) for v in api.robot_state()["arm"][side]]
-    if top0 is None or view.model is None:
+    if top0 is None or view.model is None or "top_point" not in hd:
         lifted = None
         break
-    expect, v_top = rim_rise_px(np.array([dx, dy, 0.0]), 0.10)
+    expect, v_top = top_rise_px(hd["top_point"], 0.10)
     top1 = pan_top_row(width0)
     rise_px = None if top1 is None else top0 - top1
     report[f"rim_rise_px_{attempt}"] = [None if rise_px is None else round(rise_px, 1), round(expect, 1), round(v_top, 1)]
@@ -258,18 +353,8 @@ for attempt in (1, 2):
     if rise_px >= max(6.0, 0.30 * expect):
         lifted = True
         break
-    if api.rows_left() < 260:
-        break
 report["grip_point"] = None if grip is None else [round(float(v), 4) for v in grip["hp"]]
 report["lifted_visual"] = lifted
-
-
-def milestone(name):
-    for item in api.episode.request.task_progress or ():
-        if str(item.get("class_name")) == name:
-            prog = item.get("progress") or {}
-            return str(prog.get("STATUS")) == "SUCCESS" or int(prog.get("SCORE") or 0) == 1
-    return None
 
 
 def smoother(s):
@@ -277,37 +362,12 @@ def smoother(s):
     return s * s * s * (s * (s * 6.0 - 15.0) + 10.0)
 
 
-def toss_sample(u, g_pitch, t_pitch, t_lift, lunge):
-    ug, ut = 0.7 / 1.45, 0.4 / 1.45
-    if u < ug:
-        s = smoother(u / ug)
-        return 0.0, 0.012 * s, -g_pitch * s
-    if u < ug + ut:
-        p = (u - ug) / ut
-        if p < 0.40:
-            s = smoother(p / 0.40)
-            dx, dz, pitch = -0.010 * s, 0.012 - 0.010 * s, -g_pitch
-        elif p < 0.70:
-            s = smoother((p - 0.40) / 0.30)
-            dx, dz = -0.010 + 0.025 * s, 0.002 + (t_lift - 0.002) * s
-            pitch = -g_pitch + (g_pitch + t_pitch) * s
-        else:
-            s = smoother((p - 0.70) / 0.30)
-            dx, dz, pitch = 0.015 * (1.0 - s), t_lift * (1.0 - s), t_pitch * (1.0 - s)
-        lunge_s = 0.0 if p < 0.40 else (smoother((p - 0.40) / 0.30) if p < 0.70 else 1.0 - smoother((p - 0.70) / 0.30))
-        return dx + lunge * lunge_s, dz, pitch
-    return 0.0, 0.0, 0.0
-
-
-if grip is not None and lifted is not False and api.rows_left() > 240:
-    report["stable_lift_seen"] = milestone("WokStableLift")
-    if report["stable_lift_seen"] is not False:
+TOSS_NEED = 175
+if grip is not None and lifted is not False and api.rows_left() > TOSS_NEED:
+    if True:
         api.stage_done()
         kin = api.episode.kin
         g_now = api.grasp_pose(side)
-        lifted_by = float(g_now[2, 3] - grip["grasp"][2, 3])
-        pivot = np.array([RIM_C[0] - dx, RIM_C[1] - dy, RIM_C[2] - 0.09 + lifted_by])
-        d0 = g_now[:3, 3] - pivot
         q = np.array(api.robot_state()["arm"][side], dtype=float)
         positions = api.episode.positions()
         m = api.motion()
@@ -329,21 +389,6 @@ if grip is not None and lifted is not False and api.rows_left() > 240:
                         fails += 1
                     qs.append(q)
                 z0 = z1
-        for scale, lunge in (((1.2, -0.04), (1.2, -0.04)) if TOSS == "chef" else ()):
-            n = int(round(1.45 * scale / api.episode.row_dt))
-            for k in range(1, n + 1):
-                ddx, ddz, pitch = toss_sample(k / n, 0.24, 0.30, 0.075, lunge)
-                Rp = roty(-pitch)[:3, :3]
-                T = np.eye(4)
-                T[:3, :3] = Rp @ g_now[:3, :3]
-                T[:3, 3] = pivot + np.array([ddx, 0.0, ddz]) + Rp @ d0
-                res = kin.solve(side, T, q, positions, frame="grasp", restarts=0, max_iterations=60,
-                                position_tolerance_m=0.004, rotation_tolerance_rad=math.radians(2.0))
-                if res.ok:
-                    q = np.asarray(res.joints, dtype=float)
-                else:
-                    fails += 1
-                qs.append(q)
         prev = np.array(api.robot_state()["arm"][side], dtype=float)
         stretched = 0
         for qk in qs:
@@ -353,10 +398,9 @@ if grip is not None and lifted is not False and api.rows_left() > 240:
                 m.joints(side, prev + (qk - prev) * (j / steps), rows=1)
             prev = qk
         m.hold(25)
-        report["toss"] = {"mode": TOSS, "rows": m.rows, "ik_fails": fails, "stretched_rows": stretched, "pivot": [round(float(v), 3) for v in pivot]}
+        report["toss"] = {"mode": TOSS, "rows": m.rows, "ik_fails": fails, "stretched_rows": stretched}
         if fails < 10:
             m.send(label="toss")
-            report["food_toss_seen"] = milestone("WokFoodToss")
 if grip is not None and api.rows_left() > 70:
     try:
         m = api.motion()

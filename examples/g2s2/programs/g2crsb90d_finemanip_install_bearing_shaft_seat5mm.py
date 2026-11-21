@@ -10,14 +10,28 @@ on_base = (lambda c: float(np.linalg.norm(c[:2] - base.mid[:2])) < 0.5 * float(m
 pick = api.pick_object(side, ["loose gear", "metal gear", "small metal ring", "washer"],
                        find={"size": (0.015, 0.08), "table_z": table, "z_tolerance": 0.03, "clip_z": (table - 0.01, table + 0.03),
                              "region": (lambda c: not on_base(c)) if on_base else None},
-                       grasp={"depth_into": 0.05, "lift": 0.06, "above": 0.06, "floor_clearance": 0.014},
+                       grasp={"lift": 0.06, "above": 0.06, "tip_clearance": 0.004},
                        limits=Limits(joint_velocity=2.4, joint_acceleration=9.0, linear_velocity=0.30), clear_view=0.15)
 report["pick"] = pick
 if pick["ok"]:
     api.stage_done()
-    GEAR_BELOW = 0.014
+    G_pk = api.grasp_pose(side)
+    gear_below = None
+    gn_ = (api.notes.get(f"top_grasp_{side}") or {}).get("grasp")
+    pdet = pick.get("detection") or {}
+    if gn_ is not None and pdet.get("bottom_z") is not None:
+        gear_below = min(max(float(gn_[2]) - float(pdet["bottom_z"]), 0.002), 0.06)
+    for q in ("loose gear", "metal gear"):
+        for d in api.perceive(q, max_detections=4):
+            Pg = d.points[np.linalg.norm(d.points - G_pk[:3, 3], axis=1) < 0.06]
+            if Pg.shape[0] >= 30:
+                report["gear_below_head"] = round(float(G_pk[2, 3]) - float(np.percentile(Pg[:, 2], 3)), 4)
+                break
+        if "gear_below_head" in report:
+            break
+    report["gear_below"] = None if gear_below is None else round(gear_below, 4)
     shafts = []
-    for q in ("metal shaft", "vertical metal pin", "cylindrical metal post"):
+    for q in (("metal shaft", "vertical metal pin", "cylindrical metal post") if gear_below is not None else ()):
         for d in api.perceive(q, max_detections=4):
             if d.points.shape[0] < 30:
                 continue
@@ -46,12 +60,12 @@ if pick["ok"]:
 
     if target is not None:
         st = shaft_top(target)
-        plate_z = table + 0.012 if base is None else min(float(base.top_z), table + 0.03)
+        plate_z = min(max(float(target.bottom_z), table), table + 0.03) if base is None else min(float(base.top_z), table + 0.03)
         report["shaft_top"] = [round(float(v), 4) for v in st]
         try:
             g = api.grasp_pose(side)
             hover = g.copy()
-            hover[0, 3], hover[1, 3], hover[2, 3] = float(st[0]), float(st[1]), float(st[2]) + GEAR_BELOW + 0.035
+            hover[0, 3], hover[1, 3], hover[2, 3] = float(st[0]), float(st[1]), float(st[2]) + gear_below + 0.035
             m = api.motion()
             m.tcp(side, hover, free_axis=(0.0, 0.0, 1.0))
             m.send(depth_next=True, label="over_shaft")
@@ -63,7 +77,7 @@ if pick["ok"]:
                 P = P[np.all(np.isfinite(P), axis=1)]
                 near = np.linalg.norm(P[:, :2] - st[:2], axis=1) < 0.03
                 ring = P[near & (P[:, 2] > st[2] - 0.012) & (P[:, 2] < st[2] + 0.008)]
-                gz = float(G[2, 3]) - GEAR_BELOW
+                gz = float(G[2, 3]) - gear_below
                 gear_pts = P[(np.linalg.norm(P[:, :2] - G[:2, 3], axis=1) < 0.045) & (P[:, 2] > gz - 0.003) & (P[:, 2] < gz + 0.024)]
                 look = {"ring_points": int(ring.shape[0]), "gear_points": int(gear_pts.shape[0])}
                 sc = gc = None
@@ -94,11 +108,11 @@ if pick["ok"]:
             above[0, 3] += float(shift[0])
             above[1, 3] += float(shift[1])
             enter = above.copy()
-            enter[2, 3] = float(st[2]) + GEAR_BELOW - 0.012
+            enter[2, 3] = float(st[2]) + gear_below - 0.012
             seat = above.copy()
-            seat[2, 3] = max(plate_z + GEAR_BELOW - 0.002, float(enter[2, 3]) - 0.20)
+            seat[2, 3] = max(plate_z + gear_below - 0.002, float(enter[2, 3]) - 0.20)
             start = above.copy()
-            start[2, 3] = float(st[2]) + GEAR_BELOW + 0.004
+            start[2, 3] = float(st[2]) + gear_below + 0.004
             m = api.motion()
             m.tcp(side, start, linear=True, limits=Limits(linear_velocity=0.05))
             m.hold(5)

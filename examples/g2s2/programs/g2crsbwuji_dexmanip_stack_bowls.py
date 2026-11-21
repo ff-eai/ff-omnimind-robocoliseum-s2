@@ -4,7 +4,9 @@ table = api.table_height("head")
 report["table_z"] = round(table, 4)
 W0 = np.array(api.robot_state()["waist"], dtype=float)
 report["waist0"] = [round(float(v), 3) for v in W0]
-RIM = 0.0818
+RIM = None
+R_MEAS = None
+NEST = None
 SQ_H = 0.07
 CLEAR = 0.07
 DROP = 0.02
@@ -55,37 +57,51 @@ def palms():
     return 0.5 * (api.grasp_pose("left")[:3, 3] + api.grasp_pose("right")[:3, 3])
 
 
-def rim_centre(points, r=0.078):
+def rim_centre(points, r=None):
     p = np.asarray(points, dtype=float)
     if p.shape[0] < 30:
         return None
     top = p[p[:, 2] >= float(np.percentile(p[:, 2], 98)) - 0.012][:, :2]
     if top.shape[0] < 20:
         return None
-    c = top.mean(axis=0)
+    A = np.column_stack([top[:, 0], top[:, 1], np.ones(top.shape[0])])
+    D, E, F = np.linalg.lstsq(A, -(top[:, 0] ** 2 + top[:, 1] ** 2), rcond=None)[0]
+    c = np.array([-D / 2.0, -E / 2.0])
+    rr = math.sqrt(max(float(c @ c - F), 1e-6)) if r is None else float(r)
+    if r is not None:
+        c = top.mean(axis=0)
     for rnd in (0, 1):
-        for k in range(12):
+        for k in range(15):
             d = top - c
             n = np.linalg.norm(d, axis=1) + 1e-9
-            J = -d / n[:, None]
-            step = np.linalg.lstsq(J, -(n - r), rcond=None)[0]
-            c = c + step
+            if r is None:
+                J = np.column_stack([-d / n[:, None], -np.ones(n.shape[0])])
+                step = np.linalg.lstsq(J, -(n - rr), rcond=None)[0]
+                c = c + step[:2]
+                rr = rr + float(step[2])
+            else:
+                J = -d / n[:, None]
+                step = np.linalg.lstsq(J, -(n - rr), rcond=None)[0]
+                c = c + step
             if float(np.linalg.norm(step)) < 1e-4:
                 break
         if rnd == 0:
-            keep = np.abs(np.linalg.norm(top - c, axis=1) - r) < 0.015
+            keep = np.abs(np.linalg.norm(top - c, axis=1) - rr) < 0.015
             if int(keep.sum()) < 20:
                 break
             top = top[keep]
-    rms = float(np.sqrt(np.mean((np.linalg.norm(top - c, axis=1) - r) ** 2)))
-    return c, rms, int(top.shape[0])
+    rms = float(np.sqrt(np.mean((np.linalg.norm(top - c, axis=1) - rr) ** 2)))
+    return c, rms, int(top.shape[0]), rr
 
 
 def centre_of(det, near=None, tol=0.03):
-    fit = rim_centre(det.points)
+    fit = rim_centre(det.points, R_MEAS)
     if fit is not None and fit[1] < 0.012 and (near is None or dist2(fit[0], near) < tol):
         return np.asarray(fit[0], dtype=float), round(1000 * fit[1], 1)
     return xy(det.mid), None
+
+
+PALM_OUT = float(api.episode.embodiment.arm("left").grasp_from_parent[0, 3])
 
 
 def squeeze_targets(c, half_y, z, a, out_y=0.0):
@@ -96,7 +112,7 @@ def squeeze_targets(c, half_y, z, a, out_y=0.0):
         x_axis = R @ np.array([-1.0, 0.0, 0.0])
         y_axis = np.cross(approach, x_axis)
         face = np.array([float(c[0]), float(c[1]), z]) + R @ np.array([0.0, sign * (half_y + out_y), 0.0])
-        out[side] = pose(face + approach * (0.045 - 0.018), np.column_stack([x_axis, y_axis, approach]))
+        out[side] = pose(face + approach * (PALM_OUT - 0.018), np.column_stack([x_axis, y_axis, approach]))
     return out
 
 
@@ -291,7 +307,7 @@ def cycle(i, det, base_c, rim_t, a0, m, bias):
         if rms is not None:
             held_c = c
     held_off = held_c - xy(pm)
-    if float(np.linalg.norm(held_off)) > 0.025 or gap_b < 0.085:
+    if float(np.linalg.norm(held_off)) > 0.025 or gap_b < 0.5 * 2.0 * R_MEAS:
         report.setdefault("resqueeze", []).append([i, [round(1000 * float(v), 1) for v in held_off]])
         m = api.motion()
         P = {s: m.grasp_pose(s) for s in SIDES}
@@ -380,7 +396,7 @@ def cycle(i, det, base_c, rim_t, a0, m, bias):
     pm2 = palms()
     gap_c = float(np.linalg.norm(api.grasp_pose("left")[:3, 3] - api.grasp_pose("right")[:3, 3]))
     report["cycle"][-1]["gap_c_mm"] = round(1000 * gap_c, 1)
-    if gap_c < 0.085:
+    if gap_c < 0.5 * 2.0 * R_MEAS:
         report["cycle"][-1]["empty"] = True
         m = api.motion()
         m.hand("left", "open", rows=6).hand("right", "open", rows=6)
@@ -397,7 +413,7 @@ def cycle(i, det, base_c, rim_t, a0, m, bias):
     held_xy = xy(pm2) + held_off
     held_fit = None
     if up:
-        fit = rim_centre(max(up, key=lambda d: float(np.percentile(d.points[:, 2], 98))).points)
+        fit = rim_centre(max(up, key=lambda d: float(np.percentile(d.points[:, 2], 98))).points, R_MEAS)
         if fit is not None and fit[1] < 0.012 and dist2(fit[0], held_xy) < 0.04:
             held_xy, held_fit = np.asarray(fit[0], dtype=float), round(1000 * fit[1], 1)
     low = [d for d in dets if dist2(d.mid, base_c) < 0.06 and float(np.percentile(d.points[:, 2], 98)) < rim_t + 0.03]
@@ -446,15 +462,28 @@ def cycle(i, det, base_c, rim_t, a0, m, bias):
         m.hand("left", "open", rows=6).hand("right", "open", rows=6)
     report["cycle"][-1]["apart"] = done
     m.send(depth_next=True, label=f"place_{i}")
-    return base_c, rim_t + 0.045
+    return base_c, rim_t + NEST
 
 
 bowls = bowls_now()
 report["bowls"] = [b.summary() for b in bowls]
 if len(bowls) >= 2:
-    bias = float(np.median([table + RIM - float(b.top_z) for b in bowls]))
-    bias = min(max(bias, 0.0), 0.03)
-    report["rim_bias"] = round(bias, 4)
+    radii, rims, offs = [], [], []
+    for b in bowls:
+        for d in api.perceive(b.label, "head", erode=0, max_detections=6):
+            if dist2(d.mid, b.mid) < 0.04 and d.points.shape[0] > 60:
+                f = rim_centre(d.points)
+                if f is not None and f[1] < 0.006 and 0.02 < f[3] < 0.25:
+                    radii.append(f[3])
+                top_u = float(np.percentile(d.points[:, 2], 99))
+                rims.append(top_u - table)
+                offs.append(top_u - float(b.top_z))
+                break
+    R_MEAS = float(np.median(radii)) if radii else 0.5 * float(np.median([max(b.extent[0], b.extent[1]) for b in bowls]))
+    RIM = float(np.median(rims)) if rims else float(np.median([float(b.top_z) - table for b in bowls]))
+    bias = min(max(float(np.median(offs)), 0.0), 0.03) if offs else 0.0
+    NEST = 0.5 * RIM
+    report["measured"] = {"radius": round(R_MEAS, 4), "rim_h": round(RIM, 4), "bias": round(bias, 4), "n_fits": len(radii)}
     m = api.motion()
     m.tcp({s: offset(m.grasp_pose(s), dz=0.12) for s in SIDES}, limits=FAST)
     plans = [squeeze_plan(b, m) for b in bowls]
@@ -477,7 +506,7 @@ if len(bowls) >= 2:
     feas = [sum(carry_ok(k, kb) for k in range(len(bowls)) if k != kb) for kb in range(len(bowls))]
     report["carry_feasible"] = feas
     report.pop("carry_plan", None)
-    kb = max(range(len(bowls)), key=lambda k: (feas[k], cost[k], abs(float(bowls[k].mid[1])), float(bowls[k].mid[0])))
+    kb = max(range(len(bowls)), key=lambda k: (feas[k], cost[k], float(bowls[k].mid[0]), abs(float(bowls[k].mid[1]))))
     base_c = centre_of(bowls[kb])[0]
     rim_t = float(bowls[kb].top_z) + bias
     report["base"] = [round(float(v), 3) for v in base_c]

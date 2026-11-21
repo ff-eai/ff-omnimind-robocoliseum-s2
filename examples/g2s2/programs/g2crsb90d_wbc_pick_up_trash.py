@@ -60,7 +60,7 @@ def floor_pick(side, label, expect=None):
     pk = api.pick_object(side, QUERIES,
                          find={"size": (0.03, 0.16), "table_z": FLOOR, "z_tolerance": 0.10, "side": side, "away_from_grippers": 0.12,
                                "region": region},
-                         grasp={"tip_clearance": 0.012, "contact_width": 0.06, "lift": 0.12, "above": 0.08, "settle_after_close": 12},
+                         grasp={"tip_clearance": 0.012, "contact_width": "footprint", "lift": 0.12, "above": 0.08, "settle_after_close": 12},
                          refine_wrist=0.10, limits=fast, label=f"pick_{label}")
     report[f"pick_{label}"] = {k: pk.get(k) for k in ("ok", "reason", "attempts", "wrist_floor")}
     report[f"pick_{label}_det"] = (pk.get("detection") or {}).get("mid")
@@ -88,13 +88,64 @@ def find_can():
     return best
 
 
-seen = scan(False, "scan")
-report["seen"] = [d.summary() for d in seen]
-first_ok = False
-if seen:
-    target = min(seen, key=lambda d: float(np.linalg.norm(d.mid[:2])))
+TYPES = {"crumpled white paper ball": "paper", "white paper trash": "paper", "crushed red soda can": "soda", "red can": "soda"}
+
+
+def views_add(store, label):
+    for d in trash_now(False):
+        q = str(d.label)
+        store.append({"type": TYPES.get(q, q), "score": round(float(d.score), 3), "p": api.base_to_start(d.mid), "view": label})
+    cn = find_can()
+    return None if cn is None else {"score": round(float(cn.score), 3), "p": api.base_to_start(cn.mid), "view": label}
+
+
+store = []
+cans = []
+c0 = views_add(store, "v0")
+if c0 is not None:
+    cans.append(c0)
+for k in range(3):
     try:
-        drive_beside(target.mid, -0.18, "to_first")
+        m = api.motion()
+        m.base(0.0, 0.0, math.pi / 2.0, yaw_speed=1.5)
+        m.hold(20)
+        m.send(depth_next=True, label=f"look_{k + 1}")
+    except MotionError as error:
+        report["look_error"] = str(error)[:200]
+        break
+    ck = views_add(store, f"v{k + 1}")
+    if ck is not None:
+        cans.append(ck)
+clusters = []
+for s in sorted(store, key=lambda e: -e["score"]):
+    hit = None
+    for c in clusters:
+        if float(np.linalg.norm(c["p"][:2] - s["p"][:2])) < 0.18:
+            hit = c
+            break
+    if hit is None:
+        clusters.append({"p": s["p"].copy(), "score": s["score"], "type": s["type"], "n": 1})
+    else:
+        hit["n"] += 1
+report["pieces_seen"] = [{"p": [round(float(v), 3) for v in c["p"][:2]], "score": c["score"], "type": c["type"], "n": c["n"]} for c in clusters]
+picked = []
+for c in sorted(clusters, key=lambda c: -float(c["score"])):
+    if all(float(np.linalg.norm(c["p"][:2] - o["p"][:2])) > 0.3 for o in picked):
+        picked.append(c)
+    if len(picked) == 2:
+        break
+can_store = max(cans, key=lambda c: c["score"]) if cans else None
+report["can_seen"] = None if can_store is None else {"p": [round(float(v), 3) for v in can_store["p"][:2]], "score": can_store["score"]}
+first_ok = False
+second = None
+if picked:
+    here = lambda c: float(np.linalg.norm(api.start_to_base(c["p"])[:2]))
+    picked.sort(key=here)
+    first = picked[0]
+    second = picked[1] if len(picked) > 1 else None
+    report["first_target"] = {"p": [round(float(v), 3) for v in first["p"][:2]], "score": first["score"], "type": first["type"]}
+    try:
+        drive_beside(api.start_to_base(first["p"]), -0.18, "to_first")
         api.stage_done()
         first_ok = floor_pick("right", "first")
         if first_ok:
@@ -102,12 +153,17 @@ if seen:
     except MotionError as error:
         report["first_error"] = str(error)[:200]
 if first_ok:
-    others = scan(True, "scan2")
-    report["seen2"] = [d.summary() for d in others]
-    if others:
-        t2 = min(others, key=lambda d: float(np.linalg.norm(d.mid[:2])))
+    c2 = None
+    if second is not None:
+        c2 = api.start_to_base(second["p"])[:2]
+        report["second_target"] = {"p": [round(float(v), 3) for v in second["p"][:2]], "score": second["score"], "type": second["type"], "now": [round(float(v), 3) for v in c2]}
+    else:
+        others = scan(True, "scan2")
+        report["seen2"] = [d.summary() for d in others]
+        if others:
+            c2 = np.asarray(min(others, key=lambda d: float(np.linalg.norm(d.mid[:2]))).mid[:2], dtype=float)
+    if c2 is not None:
         try:
-            c2 = np.asarray(t2.mid[:2], dtype=float)
             dist = float(np.linalg.norm(c2))
             if dist > 1.1:
                 phi = math.atan2(float(c2[1]), float(c2[0]))
@@ -143,9 +199,14 @@ if first_ok:
                 api.stage_done()
         except MotionError as error:
             report["second_error"] = str(error)[:200]
-        can = find_can()
+    can = None
+    if can_store is not None:
+        cb = api.start_to_base(can_store["p"])
+        can = {"mid": cb}
+    else:
+        found = find_can()
         k = 0
-        while can is None and k < 3:
+        while found is None and k < 3:
             try:
                 m = api.motion()
                 m.base(0.0, 0.0, math.pi / 2.0, yaw_speed=1.5)
@@ -154,20 +215,22 @@ if first_ok:
             except MotionError:
                 break
             k += 1
-            can = find_can()
-        report["can"] = None if can is None else can.summary()
-        if can is not None:
-            try:
-                c = can.mid
-                phi = math.atan2(float(c[1]), float(c[0]))
-                dist = math.hypot(float(c[0]), float(c[1]))
-                go = max(0.0, dist - 0.60)
-                m = api.motion()
-                m.base(go * math.cos(phi), go * math.sin(phi), phi, speed=0.3, yaw_speed=0.8)
-                m.hold(30)
-                m.send(depth_next=True, label="to_can")
-                api.stage_done()
-            except MotionError as error:
-                report["can_error"] = str(error)[:200]
+            found = find_can()
+        if found is not None:
+            can = {"mid": found.mid}
+    report["can"] = None if can is None else [round(float(v), 3) for v in can["mid"][:2]]
+    if can is not None:
+        try:
+            c = can["mid"]
+            phi = math.atan2(float(c[1]), float(c[0]))
+            dist = math.hypot(float(c[0]), float(c[1]))
+            go = max(0.0, dist - 0.60)
+            m = api.motion()
+            m.base(go * math.cos(phi), go * math.sin(phi), phi, speed=0.3, yaw_speed=0.8)
+            m.hold(30)
+            m.send(depth_next=True, label="to_can")
+            api.stage_done()
+        except MotionError as error:
+            report["can_error"] = str(error)[:200]
 report["budget"] = api.budget()["phases"]
 api.end_episode()

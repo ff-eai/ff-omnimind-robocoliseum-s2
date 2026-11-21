@@ -240,20 +240,6 @@ def deliver():
     api.stage_done()
     if not all(report["holding"].values()):
         return "lifted?"
-    odom = np.array(api.robot_state()["odom"], dtype=float)
-    goal = np.array([1.147, -1.637])
-    d_start = goal - odom[:2]
-    c, s_ = math.cos(-odom[2]), math.sin(-odom[2])
-    dx, dy = c * d_start[0] - s_ * d_start[1], s_ * d_start[0] + c * d_start[1]
-    report["carry_move"] = [round(float(dx), 3), round(float(dy), 3)]
-    try:
-        m = api.motion()
-        m.base(float(dx), float(dy), 0.0, speed=0.15)
-        m.hold(90)
-        m.send(depth_next=False, label="carry_to_exit")
-        return "lifted, carried"
-    except MotionError as error:
-        report["carry_error"] = str(error)[:200]
     return "lifted"
 
 

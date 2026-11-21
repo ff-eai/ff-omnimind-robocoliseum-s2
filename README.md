@@ -1,11 +1,11 @@
-# FF Omnimind: RoboColiseum Season II, job 1891
+# FF Omnimind: RoboColiseum Season II, job 1948
 
-Code of RoboColiseum Season II evaluation job 1891 (UUID `722fb5d0-a9f5-4163-95e7-108dd85c9f9a`, board `v2`), entry FF Omnimind of
-FF EAI Robotics Ecosystem Inc., platform score 0.3107. Provided only for the organizers' review; see
-`LICENSE-FF.txt`.
+Code of RoboColiseum Season II evaluation job 1948 (UUID `ad445254-1b86-4fe2-a4cc-f4aaa26829f3`, board `v2`), entry FF Omnimind of
+FF EAI Robotics Ecosystem Inc., platform score 0.2746. Provided only for the organizers' review; see
+`LICENSE-FF.txt`. The system declaration (rule 5.5.1) is provided as a separate document.
 
 - `examples/g2s2/programs/`: one program per task, selected by task name. The cross-embodiment tasks link to six
-  shared programs; tasks without a program run `default.py`.
+  shared programs; `default.py` runs for a task without a program (none in this job).
 - `src/cap_harness/g2s2/`: the worker, a GenieSim v3.6 policy server.
 - `src/cap_harness/providers/sam3/`: the SAM 3 segmentation service used by the programs.
 
@@ -21,7 +21,7 @@ FF EAI Robotics Ecosystem Inc., platform score 0.3107. Provided only for the org
    PYTHONPATH=src python -m cap_harness.providers.sam3.service --host 127.0.0.1 --port 8114
    ```
 
-2. **Workers** (CPU). Install `requirements-worker.txt`. Job 1891 ran four:
+2. **Workers** (CPU). Install `requirements-worker.txt`. Job 1948 ran four:
 
    ```bash
    for p in 9101 9102 9103 9104; do

@@ -2,16 +2,100 @@
 
 table = api.table_height("head")
 report["table_z"] = round(table, 4)
-pick = api.pick_object("right", ["blackboard eraser", "eraser", "board eraser"],
+ERASER_Q = ["blackboard eraser", "eraser", "board eraser"]
+
+
+def eraser_width():
+    det = api.find_object(ERASER_Q, size=(0.03, 0.20), table_z=table, z_tolerance=0.05)
+    return None if det is None else float(det.principal_yaw()[2])
+
+
+def eraser_wrist_look():
+    det = api.find_object(ERASER_Q, size=(0.03, 0.20), table_z=table, z_tolerance=0.05)
+    if det is None:
+        return None, None, None
+    sent = False
+    for h_look, dx_l in ((0.15, 0.0), (0.18, 0.0), (0.15, -0.04), (0.20, -0.04), (0.12, 0.0)):
+        try:
+            m = api.motion()
+            m.tcp("right", top_down((float(det.mid[0]) + dx_l, float(det.mid[1]), float(det.top_z) + h_look), 0.0), gripper="open",
+                  free_axis=(0.0, 0.0, 1.0))
+            m.send(depth_next=True, label="look_eraser")
+            sent = True
+            break
+        except MotionError as error:
+            report["look_eraser_error"] = str(error)[:100]
+    if not sent:
+        return None, None, None
+    if not api.has_depth("hand_right"):
+        return None, None, None
+    P = api.points("hand_right", stride=2)
+    P = P[np.all(np.isfinite(P), axis=1)]
+    r = np.hypot(P[:, 0] - float(det.mid[0]), P[:, 1] - float(det.mid[1]))
+    ring = P[(r > 0.06) & (r < 0.12) & (np.abs(P[:, 2] - float(table)) < 0.05)]
+    core = P[(r < 0.025) & (P[:, 2] < float(table) + 0.12)]
+    if ring.shape[0] < 50:
+        return None, None, None
+    desk = float(np.percentile(ring[:, 2], 30))
+    h = float(np.percentile(core[:, 2], 95)) - desk if core.shape[0] >= 30 else None
+    F = P[(r < 0.08) & (P[:, 2] > desk + 0.01) & (P[:, 2] < desk + 0.10)]
+    w = None
+    support = None
+    if F.shape[0] >= 50:
+        cF = np.median(F[:, :2], axis=0)
+        xy = F[:, :2] - cF
+        ev_, V_ = np.linalg.eigh(np.cov(xy.T))
+        u1, u2 = V_[:, int(np.argmax(ev_))], V_[:, int(np.argmin(ev_))]
+        s1, s2 = xy @ u1, xy @ u2
+        w = float(np.percentile(s2, 98) - np.percentile(s2, 2))
+        h1 = 0.5 * float(np.percentile(s1, 98) - np.percentile(s1, 2))
+        h2 = 0.5 * w
+        q_ = P[:, :2] - cF
+        b1 = np.abs(q_ @ u1) - h1
+        b2 = np.abs(q_ @ u2) - h2
+        bd = np.maximum(b1, b2)
+        sr = P[(bd > 0.008) & (bd < 0.025) & (P[:, 2] < desk + 0.05) & (P[:, 2] > desk - 0.02)]
+        if sr.shape[0] >= 30:
+            support = float(np.median(sr[:, 2]))
+    report["eraser_wrist"] = {"desk": round(desk, 4), "h": None if h is None else round(h, 4), "w": None if w is None else round(w, 4),
+                              "support": None if support is None else round(support, 4)}
+    return h, w, support
+
+
+def eraser_in_hand():
+    if not api.has_depth():
+        api.hold(1, depth_next=True, label="observe_eraser")
+    G = api.grasp_pose("right")
+    best = None
+    for q in ERASER_Q:
+        for d in api.perceive(q, max_detections=4):
+            if d.points.shape[0] < 40 or float(np.linalg.norm(d.mid[:3] - G[:3, 3])) > 0.12:
+                continue
+            if best is None or d.score > best.score:
+                best = d
+        if best is not None:
+            break
+    if best is None:
+        return None, None
+    qg = (best.points - G[:3, 3]) @ G[:3, :3]
+    qg = qg[np.linalg.norm(qg, axis=1) < 0.10]
+    if qg.shape[0] < 40:
+        return None, None
+    return float(np.percentile(qg[:, 2], 97)), float(np.percentile(qg[:, 1], 97) - np.percentile(qg[:, 1], 3))
+
+
+er_w = eraser_width()
+er_hw, er_ww, er_sup = eraser_wrist_look()
+pick = api.pick_object("right", ERASER_Q,
                        find={"size": (0.03, 0.20), "table_z": table, "z_tolerance": 0.05},
                        grasp={"depth_into": 0.025, "lift": 0.15})
 report["pick"] = pick
 
 STANDOFF = 0.78
 SWEET_Y = -0.12
-FELT = 0.016
+FELT = None
 PRESS = 0.006
-STEP = 0.04
+STEP = None
 
 
 def board_plane():
@@ -45,7 +129,7 @@ def dark_strokes(bp2):
     P = view.points_from_mask(mask & (lum < 0.55 * board_lum), stride=1)
     if P.shape[0] < 50:
         return None
-    P = P[(np.abs(P @ n - d) < 0.03) & (P[:, 2] >= 1.0)]
+    P = P[(np.abs(P @ n - d) < 0.015) & (P[:, 2] >= float(bp2["lo"][2]) + 0.03)]
     if P.shape[0] < 50:
         return None
     return np.column_stack([P @ lateral, P[:, 2]])
@@ -79,6 +163,27 @@ def marked_area(bp2):
 
 if pick["ok"]:
     api.stage_done()
+    gn_ = (api.notes.get("top_grasp_right") or {}).get("grasp")
+    if gn_ is not None and er_sup is not None:
+        felt_w = float(gn_[2]) - er_sup
+    else:
+        felt_w = (er_hw - 0.025) if er_hw is not None else None
+    felt_m, width_m = (None, None) if (felt_w is not None and 0.004 < felt_w < 0.06) else eraser_in_hand()
+    if felt_w is not None and 0.004 < felt_w < 0.06:
+        FELT = felt_w
+    elif felt_m is not None and 0.004 < felt_m < 0.06:
+        FELT = felt_m
+    if er_ww is not None and 0.02 < er_ww < 0.08:
+        STEP = er_ww
+    elif width_m is not None and 0.02 < width_m < 0.08:
+        STEP = width_m
+    elif er_w is not None and 0.02 < er_w < 0.08:
+        STEP = er_w
+    report["eraser_measured"] = {"felt_wrist": None if felt_w is None else round(felt_w, 4),
+                                 "felt_in_hand": None if felt_m is None else round(felt_m, 4),
+                                 "width_in_hand": None if width_m is None else round(width_m, 4),
+                                 "width_head": None if er_w is None else round(er_w, 4),
+                                 "felt": None if FELT is None else round(FELT, 4), "step": None if STEP is None else round(STEP, 4)}
     try:
         m = api.motion()
         vertical = top_down((0.0, 0.0, 0.0), 0.0)[:3, :3]
@@ -132,7 +237,7 @@ if pick["ok"]:
                 bp2 = board_plane() or bp2
             except MotionError as error:
                 report["nav2_error"] = str(error)[:200]
-        if bp2 is not None:
+        if bp2 is not None and FELT is not None and STEP is not None:
             lat_lo, lat_hi, z_lo, z_hi, source = marked_area(bp2)
             report["marks"] = {"source": source, "area": [round(v, 3) for v in (lat_lo, lat_hi, z_lo, z_hi)]}
             shift = 0.5 * (lat_lo + lat_hi) - SWEET_Y
@@ -163,11 +268,49 @@ if pick["ok"]:
             x_axis = np.cross(y_axis, z_axis)
             rot = np.column_stack([x_axis, y_axis, z_axis])
             free = (0.0, 0.0, 1.0)
+            lat_p = float(lateral @ np.array([0.0, SWEET_Y, 0.0]))
+            probe_errs = []
+            for z_p in (z_hi - 0.02, z_lo + 0.02, 0.5 * (z_lo + z_hi)):
+                try:
+                    mp = api.motion()
+                    far_p = n * (d - 0.32) + lateral * lat_p
+                    p0 = n * (d - FELT - 0.03) + lateral * lat_p
+                    p1 = n * (d - FELT + 0.04) + lateral * lat_p
+                    mp.tcp("right", pose((float(far_p[0]), float(far_p[1]), z_p), rot), free_axis=free,
+                           limits=Limits(linear_velocity=0.12, joint_velocity=0.6, joint_acceleration=1.5))
+                    mp.tcp("right", pose((float(p0[0]), float(p0[1]), z_p), rot), linear=True, free_axis=free, limits=Limits(linear_velocity=0.12))
+                    mp.tcp("right", pose((float(p1[0]), float(p1[1]), z_p), rot), linear=True, free_axis=free, limits=Limits(linear_velocity=0.03))
+                    mp.hold(10)
+                except MotionError as error:
+                    probe_errs.append(f"z {z_p:.2f}: {str(error)[:80]}")
+                    continue
+                mp.send(depth_next=True, label="probe_felt")
+                s_meas = float(api.grasp_pose("right")[:3, 3] @ n)
+                s_cmd = float(p1 @ n)
+                report["probe"] = {"z": round(z_p, 3), "felt_before": round(FELT, 4), "short_mm": round(1000.0 * (s_cmd - s_meas), 1),
+                                   "felt_touch": round(d - s_meas, 4)}
+                if s_cmd - s_meas > 0.008 and 0.003 < d - s_meas < 0.08:
+                    FELT = d - s_meas
+                back_p = n * (d - FELT - 0.10) + lateral * lat_p
+                for lin in (True, False):
+                    try:
+                        mb = api.motion()
+                        mb.tcp("right", pose((float(back_p[0]), float(back_p[1]), z_p), rot), linear=lin, free_axis=free,
+                               limits=Limits(linear_velocity=0.2, joint_velocity=0.6, joint_acceleration=1.5))
+                        mb.send(depth_next=True, label="probe_back")
+                        break
+                    except MotionError as error:
+                        probe_errs.append(f"back: {str(error)[:80]}")
+                break
+            if probe_errs:
+                report["probe_error"] = probe_errs[:4]
             depth = d - FELT + PRESS
             zs = list(np.arange(z_hi, z_lo - 1e-6, -STEP))
             if not zs or zs[-1] > z_lo + 0.01:
                 zs.append(z_lo)
             wipe = Limits(linear_velocity=0.40, joint_velocity=2.2)
+            slow = Limits(linear_velocity=0.25, joint_velocity=2.2)
+            brisk = Limits(linear_velocity=0.2, joint_velocity=1.2, joint_acceleration=3.0)
             gentle = Limits(linear_velocity=0.12, joint_velocity=0.6, joint_acceleration=1.5)
             tol = (api.ik_position_tolerance_m, api.ik_rotation_tolerance_rad)
             api.ik_position_tolerance_m, api.ik_rotation_tolerance_rad = 0.003, math.radians(1.5)
@@ -198,7 +341,7 @@ if pick["ok"]:
                             except MotionError:
                                 try:
                                     trial_b = sm.copy()
-                                    trial_b.tcp("right", back, free_axis=free, limits=gentle)
+                                    trial_b.tcp("right", back, free_axis=free, limits=brisk)
                                     sm = trial_b
                                 except MotionError as error:
                                     win_log.append({"window": wi, "back_error": str(error)[:80]})
@@ -231,14 +374,23 @@ if pick["ok"]:
                 share = (api.rows_left() - 60 - 400 * (n_rest - 1)) / max(1, n_rest)
                 win_log.append({"window": wi, "share_rows": int(share)})
                 for i, z in enumerate(zs):
+                    if api.reply_elapsed() > 50.0:
+                        win_log.append({"window": wi, "reply_cap_at_pass": i})
+                        break
                     if started and m.rows > share:
                         win_log.append({"window": wi, "cut_at_pass": i})
                         break
                     a, b = (a_w, b_w) if i % 2 == 0 else (b_w, a_w)
-                    options = [[(a, b)], [(a + (b - a) / 6.0, b - (b - a) / 6.0)], [(a, 0.5 * (a + b)), (0.5 * (a + b), b)]]
-                    for k, pieces in enumerate(options):
+                    third = (b - a) / 3.0
+                    options = [([(a, b)], "line"), ([(a + (b - a) / 6.0, b - (b - a) / 6.0)], "line"),
+                               ([(a, 0.5 * (a + b)), (0.5 * (a + b), b)], "line"), ([(a, b)], "reseed"),
+                               ([(a, a + third), (a + third, a + 2 * third), (a + 2 * third, b)], "reseed")]
+                    for k, (pieces, mode) in enumerate(options):
                         trial = m.copy()
                         got = 0
+                        if mode == "reseed":
+                            t_saved = (api.ik_position_tolerance_m, api.ik_rotation_tolerance_rad)
+                            api.ik_position_tolerance_m, api.ik_rotation_tolerance_rad = 0.006, math.radians(2.5)
                         for (aa, bb) in pieces:
                             t2 = trial.copy()
                             try:
@@ -247,17 +399,23 @@ if pick["ok"]:
                                 if not started:
                                     far = n * (d - (0.32 if first else 0.10)) + lateral * aa
                                     start = n * (d - 0.10) + lateral * aa
-                                    t2.tcp("right", pose((float(far[0]), float(far[1]), float(z)), rot), free_axis=free, limits=gentle)
+                                    t2.tcp("right", pose((float(far[0]), float(far[1]), float(z)), rot), free_axis=free, limits=gentle if first else brisk)
                                     if first:
                                         t2.tcp("right", pose((float(start[0]), float(start[1]), float(z)), rot), linear=True, free_axis=free, limits=gentle)
-                                t2.tcp("right", pose((float(p0[0]), float(p0[1]), float(z)), rot), linear=True, limits=wipe, free_axis=free)
-                                t2.tcp("right", pose((float(p1[0]), float(p1[1]), float(z)), rot), linear=True, limits=wipe, free_axis=free)
+                                if mode == "reseed":
+                                    t2.tcp("right", pose((float(p0[0]), float(p0[1]), float(z)), rot), free_axis=free, limits=brisk)
+                                    t2.tcp("right", pose((float(p1[0]), float(p1[1]), float(z)), rot), linear=True, limits=slow, free_axis=free)
+                                else:
+                                    t2.tcp("right", pose((float(p0[0]), float(p0[1]), float(z)), rot), linear=True, limits=wipe, free_axis=free)
+                                    t2.tcp("right", pose((float(p1[0]), float(p1[1]), float(z)), rot), linear=True, limits=wipe, free_axis=free)
                             except MotionError as error:
                                 report.setdefault("wipe_errors", []).append(f"w{wi} z {z:.2f} option {k}: {str(error)[:50]}")
                                 continue
                             trial = t2
                             started = True
                             got += 1
+                        if mode == "reseed":
+                            api.ik_position_tolerance_m, api.ik_rotation_tolerance_rad = t_saved
                         if got:
                             if started and done_passes > 0 and trial.rows > share + 120:
                                 got = 0
