@@ -1032,6 +1032,25 @@ class S2Api:
         self.note(f"find_object:{queries[0]}", None)
         return None
 
+    def footprint_width(self, camera: str, det: Any) -> float | None:
+        if not self.has_depth(camera):
+            return None
+        floor = self.table_height(camera)
+        if not math.isfinite(floor):
+            return None
+        P = self.points(camera, stride=1)
+        P = P[np.all(np.isfinite(P), axis=1)]
+        reach = 0.5 * float(max(det.extent[0], det.extent[1])) + 0.03
+        r = np.hypot(P[:, 0] - float(det.mid[0]), P[:, 1] - float(det.mid[1]))
+        F = P[(r < reach) & (P[:, 2] > floor + 0.003) & (P[:, 2] < floor + 0.06)]
+        if F.shape[0] < 80:
+            return None
+        xy = F[:, :2] - np.median(F[:, :2], axis=0)
+        w, V = np.linalg.eigh(np.cov(xy.T))
+        s = xy @ V[:, int(np.argmin(w))]
+        width = float(np.percentile(s, 98) - np.percentile(s, 2))
+        return width if 0.005 < width < 0.12 else None
+
     def pick_object(
         self,
         side: str,
@@ -1091,6 +1110,11 @@ class S2Api:
                         if math.isfinite(floor) and abs(floor - float(det.bottom_z)) < 0.03:
                             grasp["bottom_z"] = floor
                             result["wrist_floor"] = round(floor, 4)
+                    if grasp.get("contact_width") == "footprint":
+                        width = self.footprint_width(f"hand_{side}", det)
+                        result["footprint_width"] = None if width is None else round(width, 4)
+                        if width is not None:
+                            grasp["contact_width"] = width
             result["detection"] = det.summary()
             result.setdefault("tries", []).append({k: result["detection"][k] for k in ("label", "camera", "score", "mid", "extent", "yaw_deg")})
             try:
@@ -1099,6 +1123,8 @@ class S2Api:
                 motion = self.motion()
                 if attempt > 0 and self.episode.embodiment.gripper.kind == "parallel":
                     motion.gripper(side, "open", rows=20)
+                if grasp.get("contact_width") == "footprint":
+                    grasp.pop("contact_width")
                 plan = self.top_grasp(side, det, motion=motion, **grasp)
             except MotionError as error:
                 result["reason"] = f"plan: {str(error)[:300]}"
@@ -1289,6 +1315,7 @@ PROGRAM_HELPERS = {
     "wuji_pinch": wuji_pinch,
     "Limits": Limits,
     "MotionError": MotionError,
+    "tip_beyond_grasp_90d": tip_beyond_grasp_90d,
     "EpisodeEnded": EpisodeEnded,
 }
 

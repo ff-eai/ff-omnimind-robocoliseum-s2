@@ -36,7 +36,7 @@ def outward(det):
 waist_options = [None]
 
 
-def press_motion(side, det, free_yaw):
+def press_motion(side, det, free_yaw, way_opt=None):
     n, source = outward(det)
     phi = math.atan2(float(n[1]), float(n[0]))
     p = det.mid
@@ -49,30 +49,48 @@ def press_motion(side, det, free_yaw):
         candidates = [(t, None) for t in (0.55, 0.7, 0.4, 0.85)]
     else:
         candidates = [(t, y) for t in (0.7, 0.55, 0.85, 0.4, 1.0) for y in (phi + math.pi / 2.0, phi - math.pi / 2.0)]
-    for waist in waist_options:
-        for tilt, yaw in candidates:
-            trial = api.motion().gripper(side, "close", rows=20)
-            press = top_down(tip, phi + math.pi / 2.0 if yaw is None else yaw, tilt=tilt, tilt_toward=phi)
-            press[:3, 3] = tip - press[:3, :3] @ tip_in_grasp
-            above = offset(press, dz=0.07)
-            try:
-                if waist is not None:
-                    trial.waist(waist)
-                fast = Limits(joint_velocity=2.4, joint_acceleration=9.0)
-                if yaw is None:
-                    trial.tcp(side, above, free_axis=(0, 0, 1), limits=fast)
-                    trial.tcp(side, press, linear=True, limits=Limits(linear_velocity=0.12), free_axis=(0, 0, 1))
-                else:
-                    trial.tcp(side, above, limits=fast)
-                    trial.tcp(side, press, linear=True, limits=Limits(linear_velocity=0.12))
-                trial.hold(20)
-                report["press_tilt_deg"] = round(math.degrees(tilt), 1)
-                report["press_yaw_deg"] = None if yaw is None else round(math.degrees(yaw), 1)
-                report["press_side"] = side
-                report["press_waist"] = None if waist is None else [round(float(v), 3) for v in waist]
-                return trial
-            except MotionError as error:
-                errors.append(f"{side} tilt {tilt:.2f} yaw {yaw} waist {waist}: {error}")
+    g1 = str(info["embodiment"]) == "g1_omnipicker"
+    if not g1:
+        way_opt = None
+    lid_z = float(can.top_z) if can is not None else None
+    if lid_z is None:
+        way_opt = None
+    for once in (0,):
+        for waist in waist_options:
+            for tilt, yaw in candidates:
+                if api.reply_elapsed() > 55.0:
+                    errors.append("planning stopped at the 55 s reply cap")
+                    report.setdefault("press_errors", []).extend(errors[-4:])
+                    return None
+                trial = api.motion().gripper(side, "close", rows=20)
+                press = top_down(tip, phi + math.pi / 2.0 if yaw is None else yaw, tilt=tilt, tilt_toward=phi)
+                press[:3, 3] = tip - press[:3, :3] @ tip_in_grasp
+                above = offset(press, dz=0.07)
+                try:
+                    if waist is not None:
+                        trial.waist(waist)
+                    fast = Limits(joint_velocity=2.4, joint_acceleration=9.0)
+                    fa = {"free_axis": (0, 0, 1)} if yaw is None else {}
+                    if way_opt is not None:
+                        way = above.copy()
+                        way[0, 3] += way_opt[0] * float(n[0])
+                        way[1, 3] += way_opt[0] * float(n[1])
+                        way[2, 3] = max(float(above[2, 3]), lid_z + way_opt[1])
+                        trial.tcp(side, way, limits=fast, **fa)
+                        trial.tcp(side, above, linear=True, limits=Limits(linear_velocity=0.15), **fa)
+                        report["press_way"] = [round(float(v), 3) for v in way[:3, 3]] + [way_opt[0], way_opt[1]]
+                    else:
+                        report["press_way"] = None
+                        trial.tcp(side, above, limits=fast, **fa)
+                    trial.tcp(side, press, linear=True, limits=Limits(linear_velocity=0.12), **fa)
+                    trial.hold(20)
+                    report["press_tilt_deg"] = round(math.degrees(tilt), 1)
+                    report["press_yaw_deg"] = None if yaw is None else round(math.degrees(yaw), 1)
+                    report["press_side"] = side
+                    report["press_waist"] = None if waist is None else [round(float(v), 3) for v in waist]
+                    return trial
+                except MotionError as error:
+                    errors.append(f"{side} way {way_opt} tilt {tilt:.2f} yaw {yaw} waist {waist}: {error}")
     report.setdefault("press_errors", []).extend(errors[-4:])
     return None
 
@@ -88,13 +106,20 @@ def lid_top():
 
 lid0 = None if can is None else float(can.top_z)
 if pedal is not None:
-    for free_yaw in (False, True):
-        for side in press_order:
-            m = press_motion(side, pedal, free_yaw)
-            if m is not None:
-                press_side = side
-                m.send(depth_next=True, label="press_pedal")
-                pressed = True
+    way_options = [(0.10, 0.05), (0.06, 0.02), None] if str(info["embodiment"]) == "g1_omnipicker" else [None]
+    for way_opt in way_options:
+        for free_yaw in (False, True):
+            for side in press_order:
+                if api.reply_elapsed() > 55.0:
+                    report["press_capped"] = True
+                    break
+                m = press_motion(side, pedal, free_yaw, way_opt)
+                if m is not None:
+                    press_side = side
+                    m.send(depth_next=True, label="press_pedal")
+                    pressed = True
+                    break
+            if pressed:
                 break
         if pressed:
             break

@@ -5,28 +5,12 @@ fast = Limits(joint_velocity=2.4, joint_acceleration=9.0, linear_velocity=0.30)
 waist_lim = Limits(joint_velocity=1.0, joint_acceleration=3.0)
 w0 = [float(v) for v in api.robot_state()["waist"]]
 start_arm = {s: np.array(q, dtype=float) for s, q in api.robot_state()["arm"].items()}
-PLATFORM_EDGE_X = -0.40
-PLATFORM_Y = 1.80
-SHELF_STOP_X = 0.33
 WAIST_LOW = [-0.9, 2.2, -0.3, w0[3], w0[4]]
 WAIST_DROP = [-0.7, 1.5, 0.0, w0[3], w0[4]]
 
 
 def odom():
     return np.array(api.robot_state()["odom"], dtype=float)
-
-
-def go_start_frame(x, y, yaw, label, speed=0.3):
-    o = odom()
-    d = np.array([x, y]) - o[:2]
-    c, s_ = math.cos(-o[2]), math.sin(-o[2])
-    dx, dy = c * d[0] - s_ * d[1], s_ * d[0] + c * d[1]
-    dyaw = (yaw - o[2] + math.pi) % (2.0 * math.pi) - math.pi
-    m = api.motion()
-    m.base(float(dx), float(dy), float(dyaw), speed=speed, yaw_speed=1.0)
-    m.hold(25)
-    m.send(depth_next=True, label=label)
-    report.setdefault("legs", []).append([label] + [round(float(v), 3) for v in odom()])
 
 
 def parcels_now(shelf_z):
@@ -126,88 +110,12 @@ def trip(k, shelf_z):
 
 shelf = api.table_height("head")
 report["shelf_z"] = round(shelf, 4)
-placed = 0
-for k in range(2):
-    got = trip(k, shelf)
-    if got == 0:
-        break
-    try:
-        o = odom()
-        go_start_frame(float(o[0]) - 0.35, float(o[1]), 0.0, f"back{k}")
-        go_start_frame(PLATFORM_EDGE_X + 0.32, PLATFORM_Y, math.pi, f"to_cart{k}")
-        m = api.motion()
-        m.waist(WAIST_DROP, limits=waist_lim)
-        targets = {}
-        for side, sy in (("left", 0.14), ("right", -0.14)):
-            targets[side] = top_down((0.50, sy, 0.35), 0.0)
-        m.tcp(targets, free_axis=(0.0, 0.0, 1.0), limits=fast)
-        m.gripper("left", "open", rows=12).gripper("right", "open", rows=12)
-        m.hold(15)
-        m.tcp({sd: offset(t, dz=0.15) for sd, t in targets.items()}, free_axis=(0.0, 0.0, 1.0), limits=fast)
-        m.waist(w0, limits=waist_lim)
-        m.send(depth_next=True, label=f"drop{k}")
-        placed += got
-        report[f"placed_after_trip{k}"] = placed
-        if placed >= 2 and k == 0:
-            api.stage_done()
-        if placed >= 4:
-            api.stage_done()
-    except MotionError as error:
-        report[f"cart_error{k}"] = str(error)[:200]
-        break
-    if k == 0:
-        try:
-            go_start_frame(0.0, 0.0, 0.0, "back_to_shelf")
-        except MotionError as error:
-            report["return_error"] = str(error)[:200]
-            break
-
-
-HANDLE_X, HANDLE_Y = -0.694, 1.25
-try:
-    o = odom()
-    go_start_frame(float(o[0]) + 0.10 if float(o[1]) > 1.0 else float(o[0]), float(o[1]), float(o[2]), "clear_cart")
-    go_start_frame(0.05, 0.69, math.pi / 2.0, "beside_handle")
-    go_start_frame(HANDLE_X, HANDLE_Y - 0.55, math.pi / 2.0, "at_handle")
-    P = api.points("head", stride=2)
-    P = P[np.all(np.isfinite(P), axis=1)]
-    sel = P[(P[:, 0] > 0.30) & (P[:, 0] < 0.90) & (np.abs(P[:, 1]) < 0.35) & (P[:, 2] > 0.75) & (P[:, 2] < 1.10)]
-    bar = None
-    if sel.shape[0] > 40:
-        ztop = float(np.percentile(sel[:, 2], 97))
-        top = sel[sel[:, 2] > ztop - 0.03]
-        bar = (float(np.median(top[:, 0])), float(np.median(top[:, 1])), float(np.median(top[:, 2])) - 0.012, int(top.shape[0]))
-    report["handle_bar"] = None if bar is None else [round(v, 3) for v in bar[:3]] + [bar[3]]
-    bx, by, bz = (bar[0], bar[1], bar[2]) if bar is not None else (0.55, 0.0, 0.88)
-    m = api.motion()
-    grips = {sd: top_down((bx, by + sy, bz), 0.0) for sd, sy in (("left", 0.13), ("right", -0.13))}
-    m.tcp({sd: offset(t, dz=0.08) for sd, t in grips.items()}, gripper="open", free_axis=None, limits=fast)
-    m.tcp(grips, limits=Limits(linear_velocity=0.10))
-    m.gripper("left", "close", rows=20).gripper("right", "close", rows=20)
-    m.hold(15)
-    m.send(depth_next=True, label="grip_handle")
-    report["handle_held"] = {sd: bool(api.holding(sd)) for sd in ("left", "right")}
-    D = (bx + 0.893)
-    step = math.radians(15.0)
-    for k in range(6):
-        m = api.motion()
-        m.base(float(D * (1.0 - math.cos(step))), float(-D * math.sin(step)), float(step), speed=0.35, yaw_speed=0.8)
-        m.hold(6)
-        m.send(depth_next=(k == 5), label=f"swing_{k}")
-    report["after_swing_odom"] = [round(float(v), 3) for v in odom()]
-    for k, dist in enumerate((2.5, 2.5, 2.3)):
-        m = api.motion()
-        m.base(float(dist), 0.0, 0.0, speed=0.35, yaw_speed=0.5)
-        m.hold(10)
-        m.send(depth_next=(k == 2), label=f"push_{k}")
-    report["after_push_odom"] = [round(float(v), 3) for v in odom()]
-    api.stage_done()
-    m = api.motion()
-    m.gripper("left", "open", rows=12).gripper("right", "open", rows=12)
-    m.tcp({sd: offset(t, dz=0.10) for sd, t in grips.items()}, limits=fast)
-    m.base(-0.35, 0.0, 0.0, speed=0.25)
-    m.send(depth_next=True, label="let_go_cart")
-except MotionError as error:
-    report["cart_push_error"] = str(error)[:200]
+Ph = api.points("head", stride=3)
+Ph = Ph[np.all(np.isfinite(Ph), axis=1)]
+Fr = Ph[(np.abs(Ph[:, 1]) < 0.5) & (Ph[:, 0] > 0.2) & (Ph[:, 2] > float(shelf) - 0.30) & (Ph[:, 2] < float(shelf) + 0.02)]
+SHELF_STOP_X = (float(np.percentile(Fr[:, 0], 2)) - 0.30) if Fr.shape[0] > 100 else 0.0
+report["shelf_stop_x"] = round(SHELF_STOP_X, 3)
+got = trip(0, shelf)
+report["picked_first_trip"] = got
 report["budget"] = api.budget()["phases"]
 api.end_episode()

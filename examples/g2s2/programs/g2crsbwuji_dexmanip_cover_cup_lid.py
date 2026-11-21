@@ -1,18 +1,26 @@
 # Copyright (c) 2026 FF EAI Robotics Ecosystem Inc. All rights reserved. Review use only; see LICENSE-FF.txt.
 
 LID_Q = ["cup lid", "round lid", "lid", "small grey disc"]
+CUP_ARM = None
+for seg_text in list(api.task_info().get("segments") or []):
+    if "cup" in seg_text.lower() and "lid" not in seg_text.lower():
+        CUP_ARM = api.instructed_arm(seg_text)
 CUP_Q = ["cup", "grey cup", "tall cup", "mug"]
 table = api.table_height("head")
 report["table_z"] = round(table, 4)
 OPEN_Q = wuji_open()
 CLOSED_Q = np.array([0.8166, 0.2442, 0.6353, 0.8531, 0.8475, 0.0, 0.7111, 1.5753] + [0.0] * 12)
-PRE_Q = OPEN_Q + 0.35 * (CLOSED_Q - OPEN_Q)
-SQUEEZE_Q = OPEN_Q + 0.70 * (CLOSED_Q - OPEN_Q)
-PINCH_UP = 0.0025
-PINCH_C = {"right": np.array([-0.0379, 0.0495, 0.0115]), "left": np.array([-0.0379, -0.0495, 0.0115])}
+PRE_BLEND, SQUEEZE_BLEND = 0.35, 0.70
+PRE_Q = OPEN_Q + PRE_BLEND * (CLOSED_Q - OPEN_Q)
+SQUEEZE_Q = OPEN_Q + SQUEEZE_BLEND * (CLOSED_Q - OPEN_Q)
+PAD_MM = [(0.35, 79.8, -43.2, 62.8, -1.4), (0.375, 76.8, -42.7, 60.9, 0.9), (0.4, 73.6, -42.1, 58.9, 3.1),
+          (0.425, 70.5, -41.4, 57.0, 5.1), (0.45, 67.2, -40.7, 55.0, 7.0), (0.475, 63.9, -39.8, 53.1, 8.8),
+          (0.5, 60.6, -38.8, 51.1, 10.4), (0.525, 57.1, -37.7, 49.1, 11.8), (0.55, 53.7, -36.6, 47.1, 13.1),
+          (0.575, 50.2, -35.4, 45.1, 14.3), (0.6, 46.6, -34.1, 43.1, 15.2), (0.625, 43.1, -32.7, 41.1, 16.1),
+          (0.65, 39.5, -31.4, 39.1, 16.7), (0.675, 35.9, -29.9, 37.2, 17.3), (0.7, 32.3, -28.5, 35.3, 17.6)]
+GRIP_DEPTH = 0.005
+KIN = api.episode.kin
 PINCH_A = {"right": np.array([0.716, 0.698, 0.0]), "left": np.array([0.716, -0.698, 0.0])}
-BOSS_H = 0.0115
-LID_H = 0.015
 WAISTS = [None, [-0.83, 1.27, 0.31, 0.0, 0.0], [-0.60, 0.90, 0.50, 0.0, 0.0]]
 FAST = Limits(joint_velocity=2.4, joint_acceleration=8.0)
 
@@ -74,7 +82,7 @@ def rim_circle(points):
     p = np.asarray(points, dtype=float)
     if p.shape[0] < 40:
         return None
-    top = p[p[:, 2] >= float(np.percentile(p[:, 2], 98)) - 0.015][:, :2]
+    top = p[p[:, 2] >= float(np.percentile(p[:, 2], 98)) - 0.012][:, :2]
     if top.shape[0] < 25:
         return None
     A = np.column_stack([top[:, 0], top[:, 1], np.ones(top.shape[0])])
@@ -89,13 +97,45 @@ def rim_circle(points):
     return c, r, rms, int(top.shape[0])
 
 
-def pinch_grasp(side, point, u_axis):
+def pad_mid_at_width(side, width):
+    rows = [tuple([r[0]] + [0.001 * v for v in r[1:]]) for r in PAD_MM]
+    if width >= rows[0][1]:
+        r = rows[0][2:]
+    elif width <= rows[-1][1]:
+        r = rows[-1][2:]
+    else:
+        r = rows[-1][2:]
+        for a, b in zip(rows[:-1], rows[1:]):
+            if b[1] <= width <= a[1]:
+                f = (a[1] - width) / max(1e-9, a[1] - b[1])
+                r = tuple(a[k] + f * (b[k] - a[k]) for k in range(2, 5))
+                break
+    return np.array([float(r[0]), float(r[1]) * (1.0 if side == "right" else -1.0), float(r[2])])
+
+
+def pad_mid_at_blend(side, blend):
+    rows = PAD_MM
+    b = min(max(blend, rows[0][0]), rows[-1][0])
+    for a, c in zip(rows[:-1], rows[1:]):
+        if a[0] <= b <= c[0]:
+            f = (b - a[0]) / max(1e-9, c[0] - a[0])
+            r = [0.001 * (a[k] + f * (c[k] - a[k])) for k in range(2, 5)]
+            return np.array([r[0], r[1] * (1.0 if side == "right" else -1.0), r[2]])
+    r = [0.001 * v for v in rows[-1][2:]]
+    return np.array([r[0], r[1] * (1.0 if side == "right" else -1.0), r[2]])
+
+
+PINCH_BLEND = 0.5 * (PRE_BLEND + SQUEEZE_BLEND)
+PINCH_C = {s_: pad_mid_at_blend(s_, PINCH_BLEND) for s_ in ("right", "left")}
+
+
+def pinch_grasp(side, point, u_axis, pad):
     a = PINCH_A[side] / float(np.linalg.norm(PINCH_A[side]))
     phi = math.atan2(float(u_axis[1]), float(u_axis[0])) - math.atan2(-float(a[1]), float(a[0]))
     xg = np.array([math.cos(phi), math.sin(phi), 0.0])
     zg = np.array([0.0, 0.0, -1.0])
     rot = np.column_stack([xg, np.cross(zg, xg), zg])
-    return pose(np.asarray(point, dtype=float) - rot @ PINCH_C[side], rot)
+    return pose(np.asarray(point, dtype=float) - rot @ pad, rot)
 
 
 pool = []
@@ -111,13 +151,46 @@ cup = cups[0] if cups else api.find_object(CUP_Q, size=(0.04, 0.14), table_z=tab
                                            exclude=[lid.mid] if lid is not None else [], exclude_radius=0.05)
 report["lid"] = None if lid is None else lid.summary()
 LID_C = None
+WIDTH_PTS = None if lid is None else lid.points[:, :2]
 if lid is not None and lid.points.shape[0] > 30:
     tp = lid.points[lid.points[:, 2] >= float(np.percentile(lid.points[:, 2], 98)) - 0.004]
     if tp.shape[0] > 15:
+        WIDTH_PTS = tp[:, :2]
         LID_C = np.array([float(np.mean(tp[:, 0])), float(np.mean(tp[:, 1]))])
         report["lid_top_centre"] = [round(float(v), 4) for v in LID_C] + [int(tp.shape[0])]
 report["cup"] = None if cup is None else cup.summary()
 held = None
+PINCH_Z = None
+D_PB = None
+if lid is not None:
+    x0, y0, x1, y1 = (float(v) for v in lid.box)
+    pad = max(30.0, 0.8 * max(x1 - x0, y1 - y0))
+    table_lid = table
+    n_sup = 0
+    try:
+        hv = api.camera("head")
+        hh, ww = hv.depth_m.shape
+        win = np.zeros((hh, ww), dtype=bool)
+        win[max(0, int(y0 - pad)):int(y1 + pad), max(0, int(x0 - pad)):int(x1 + pad)] = True
+        lm = np.asarray(lid.mask, dtype=bool)
+        dil = lm.copy()
+        for dy in range(-6, 7, 2):
+            for dx in range(-6, 7, 2):
+                dil |= np.roll(np.roll(lm, dy, axis=0), dx, axis=1)
+        sp = hv.points_from_mask(win & ~dil, stride=1)
+        sp = sp[np.abs(sp[:, 2] - table) < 0.03] if sp.shape[0] else sp
+        n_sup = int(sp.shape[0])
+        if n_sup >= 200:
+            table_lid = float(np.percentile(sp[:, 2], 90))
+    except Exception:
+        table_lid = table
+    lid_h = float(lid.top_z) - table_lid
+    if not 0.004 <= lid_h <= 0.04:
+        lid_h = min(max(lid_h, 0.004), 0.04)
+    PINCH_Z = table_lid + max(lid_h - GRIP_DEPTH, 0.5 * lid_h)
+    D_PB = PINCH_Z - table_lid
+    report["lid_measured"] = {"support_z": round(table_lid, 4), "n_support": n_sup, "height": round(lid_h, 4), "pinch_z": round(PINCH_Z, 4),
+                              "d_pb": round(D_PB, 4)}
 if lid is not None:
     c = np.array([float(lid.mid[0]), float(lid.mid[1])])
     sides = ["left", "right"] if float(lid.mid[1]) > 0.0 else ["right", "left"]
@@ -128,13 +201,16 @@ if lid is not None:
         for k in range(12):
             th = 2.0 * math.pi * k / 12.0
             u = np.array([math.cos(th), math.sin(th)])
-            g0 = pinch_grasp(side, np.array([c[0], c[1], 0.0]), u)
+            g0 = pinch_grasp(side, np.array([c[0], c[1], 0.0]), u, np.zeros(3))
             toward = (sh - c) / max(1e-6, float(np.linalg.norm(sh - c)))
             cands.append((-float(np.dot(g0[:2, 0], toward)), th, u))
         cands.sort(key=lambda t: (abs(abs(round(math.degrees(t[1])) % 360 - 180) - 30), t[0]))
         for waist in WAISTS:
             for score, th, u in cands[:5]:
-                g = pinch_grasp(side, np.array([c[0], c[1], float(lid.top_z) - LID_H + BOSS_H + PINCH_UP]), u)
+                wv = (WIDTH_PTS - np.median(WIDTH_PTS, axis=0)) @ np.asarray(u, dtype=float)
+                width = float(np.percentile(wv, 98) - np.percentile(wv, 2))
+                pad = np.array([float(PINCH_C[side][0]), float(PINCH_C[side][1]), float(pad_mid_at_width(side, width)[2])])
+                g = pinch_grasp(side, np.array([c[0], c[1], PINCH_Z]), u, pad)
                 m = api.motion()
                 try:
                     m.hand(side, PRE_Q, rows=10)
@@ -150,7 +226,8 @@ if lid is not None:
                     errors.append(f"{side}/{waist is not None}/{round(math.degrees(th))}: {str(error)[:60]}")
                     continue
                 m.send(depth_next=True, label="pick_lid")
-                held = {"side": side, "grasp": g, "axis_deg": round(math.degrees(th)), "waist": waist, "u": u, "lid_c": c}
+                held = {"side": side, "grasp": g, "axis_deg": round(math.degrees(th)), "waist": waist, "u": u, "lid_c": c,
+                        "width": width, "pad_plan": pad}
                 break
             if held is not None:
                 break
@@ -158,12 +235,16 @@ if lid is not None:
             break
     report["pick_errors"] = errors[:4]
 if held is not None:
-    report["held"] = {"side": held["side"], "axis_deg": held["axis_deg"], "lean": held["waist"] is not None}
+    held["pc"] = PINCH_C[held["side"]]
+    D_PB = D_PB + (float(held["pad_plan"][2]) - float(held["pc"][2]))
+    report["held"] = {"side": held["side"], "axis_deg": held["axis_deg"], "lean": held["waist"] is not None,
+                      "width_mm": round(1000 * held["width"], 1), "pad_plan_mm": [round(1000 * float(v), 1) for v in held["pad_plan"]],
+                      "pinch_mm": [round(1000 * float(v), 1) for v in held["pc"]], "d_pb": round(D_PB, 4)}
     chk = api.lifted_check(LID_Q, lid, size=(0.03, 0.12))
     report["lift_check"] = chk
     api.stage_done()
     g0 = held["grasp"]
-    held_xy = (g0[:3, 3] + g0[:3, :3] @ PINCH_C[held["side"]])[:2]
+    held_xy = (g0[:3, 3] + g0[:3, :3] @ held["pc"])[:2]
     again = []
     for q in CUP_Q + ["round object"]:
         for d in api.plausible(api.perceive(q, max_detections=6), size=(0.03, 0.14), table_z=table, z_tolerance=0.05):
@@ -178,20 +259,20 @@ if held is not None:
             cup = best
     side = held["side"]
     Gm0 = api.grasp_pose(side)
-    pin0 = (Gm0[:3, 3] + Gm0[:3, :3] @ PINCH_C[side])[:2]
+    pin0 = (Gm0[:3, 3] + Gm0[:3, :3] @ held["pc"])[:2]
     uu = np.asarray(held["u"], dtype=float) / float(np.linalg.norm(held["u"]))
     vv = np.array([-uu[1], uu[0]])
     dl = np.asarray(held["lid_c"], dtype=float) - pin0
     lid_off0 = vv * float(np.dot(dl, vv))
-    if float(np.linalg.norm(lid_off0)) > 0.015:
-        lid_off0 = lid_off0 * (0.015 / float(np.linalg.norm(lid_off0)))
+    if float(np.linalg.norm(lid_off0)) > 0.02:
+        lid_off0 = lid_off0 * (0.02 / float(np.linalg.norm(lid_off0)))
     lid_off_hand = Gm0[:3, :3].T @ np.array([float(lid_off0[0]), float(lid_off0[1]), 0.0])
     good = False
     if cup is not None:
         for d in api.perceive(cup.label, "head", erode=0, max_detections=5):
             if float(np.linalg.norm(d.mid[:2] - cup.mid[:2])) < 0.03 and d.points.shape[0] > 50:
                 f0 = rim_circle(d.points)
-                good = f0 is not None and 0.024 < f0[1] < 0.040 and f0[2] < 0.004
+                good = f0 is not None and 0.010 < f0[1] < 0.08 and f0[2] < 0.004
                 break
     w_place = np.array(api.robot_state()["waist"], dtype=float)
     if cup is None or not good or abs(float(cup.mid[1])) > 0.22:
@@ -199,7 +280,7 @@ if held is not None:
         if cup is not None:
             yaw = float(np.clip(math.atan2(float(cup.mid[1]), float(cup.mid[0])), -0.45, 0.45))
         else:
-            yaw = -0.35 if side == "left" else 0.35
+            yaw = 0.35 if CUP_ARM == "left" else (-0.35 if CUP_ARM == "right" else 0.0)
         m = api.motion()
         try:
             m.tcp(other, offset(m.grasp_pose(other), dx=-0.10, dz=0.15), limits=FAST)
@@ -211,7 +292,7 @@ if held is not None:
         m.hold(10)
         m.send(depth_next=True, label="look_cup")
         Gl = api.grasp_pose(side)
-        hxy = (Gl[:3, 3] + Gl[:3, :3] @ PINCH_C[side])[:2]
+        hxy = (Gl[:3, 3] + Gl[:3, :3] @ held["pc"])[:2]
         seen = []
         for q in CUP_Q + ["round object"]:
             for d in api.plausible(api.perceive(q, max_detections=6), size=(0.03, 0.14), table_z=table, z_tolerance=0.05):
@@ -234,21 +315,21 @@ if held is not None:
                 cup_pts0 = d.points
                 break
         report["cup_top_est"] = round(cup_top, 4)
-        lid_xy = g[:3, 3] + g[:3, :3] @ PINCH_C[side]
+        lid_xy = g[:3, 3] + g[:3, :3] @ held["pc"]
         shift = np.array([float(cup.mid[0]) - float(lid_xy[0]), float(cup.mid[1]) - float(lid_xy[1]), 0.0])
         lifted = offset(g, dz=0.13)
-        lid_bottom_now = float(g[2, 3] + (g[:3, :3] @ PINCH_C[side])[2]) - BOSS_H + 0.13
+        lid_bottom_now = float(g[2, 3] + (g[:3, :3] @ held["pc"])[2]) - D_PB + 0.13
         hang = float(lifted[2, 3]) - lid_bottom_now
         lid_c = np.array([float(lid_xy[0]), float(lid_xy[1]), 0.0])
         cup_c = np.array([float(cup.mid[0]), float(cup.mid[1]), 0.0])
         fit = rim_circle(cup_pts0 if cup_pts0 is not None else cup.points)
-        if fit is not None and 0.024 < fit[1] < 0.040 and fit[2] < 0.005 and float(np.linalg.norm(fit[0] - cup.mid[:2])) < 0.03:
+        if fit is not None and 0.010 < fit[1] < 0.08 and fit[2] < 0.005 and float(np.linalg.norm(fit[0] - cup.mid[:2])) < 0.03:
             cup_c = np.array([float(fit[0][0]), float(fit[0][1]), 0.0])
         report["cup_fit"] = None if fit is None else [round(float(fit[0][0]), 4), round(float(fit[0][1]), 4), round(1000 * fit[1], 1), round(1000 * fit[2], 1), fit[3]]
         Gm = api.grasp_pose(side)
         mm0 = api.motion()
         Gc = mm0.grasp_pose(side)
-        sag = (Gm[:3, 3] + Gm[:3, :3] @ PINCH_C[side]) - (Gc[:3, 3] + Gc[:3, :3] @ PINCH_C[side])
+        sag = (Gm[:3, 3] + Gm[:3, :3] @ held["pc"]) - (Gc[:3, 3] + Gc[:3, :3] @ held["pc"])
         if float(np.linalg.norm(sag)) > 0.04:
             sag = np.zeros(3)
         lid_off = lid_off0
@@ -284,12 +365,12 @@ if held is not None:
                 report["place"].update({"psi_deg": psi_deg, "waist_yaw": dyaw})
                 m.send(depth_next=True, label="lid_over_cup")
                 Gm = api.grasp_pose(side)
-                pm = Gm[:3, 3] + Gm[:3, :3] @ PINCH_C[side]
+                pm = Gm[:3, 3] + Gm[:3, :3] @ held["pc"]
                 lo_now = (Gm[:3, :3] @ lid_off_hand)[:2]
                 exy = cup_c[:2] - lo_now - pm[:2]
                 if float(np.linalg.norm(exy)) > 0.03:
                     exy = exy * (0.03 / float(np.linalg.norm(exy)))
-                dz = (cup_top + 0.004) - (float(pm[2]) - BOSS_H - PINCH_UP)
+                dz = (cup_top + 0.004) - (float(pm[2]) - D_PB)
                 dz = min(max(dz, -0.05), 0.0)
                 report["place"].update({"err_mm": [round(1000 * float(v), 1) for v in exy], "lower_mm": round(1000 * dz, 1)})
                 m = api.motion()

@@ -1,5 +1,6 @@
 # Copyright (c) 2026 FF EAI Robotics Ecosystem Inc. All rights reserved. Review use only; see LICENSE-FF.txt.
 
+SETTLE_ROWS = int(round(2.0 / float(api.task_info()["row_dt_s"])))
 seg0 = api.segment_text(0)
 side = api.instructed_arm(seg0) or "left"
 table = api.table_height("head")
@@ -7,9 +8,15 @@ report["side"] = side
 cup = api.find_object(["milk tea cup", "cup with lid", "plastic cup"], size=(0.04, 0.20))
 report["cup"] = None if cup is None else cup.summary()
 
-STRAW_R = 0.00625
-RIM_TO_OPENING = 0.008
-HOLE_BIAS = (-0.0003, 0.0021)
+r_straw = None
+w_seen = None
+
+
+def grow(mask, k):
+    out = mask.copy()
+    for i_ in range(k):
+        out = out | np.roll(out, 1, 0) | np.roll(out, -1, 0) | np.roll(out, 1, 1) | np.roll(out, -1, 1)
+    return out
 
 
 def hole_from_head():
@@ -18,7 +25,7 @@ def hole_from_head():
     view = api.camera("head")
     if view.model is None or view.T_base_optical is None:
         return None
-    zp = float(cup.top_z) - RIM_TO_OPENING
+    zp = float(cup.top_z)
     H, W = view.rgb.shape[:2]
     vv, uu = np.mgrid[0:H, 0:W]
     rays = view.model.pixel_rays(uu.ravel().astype(float), vv.ravel().astype(float))
@@ -33,11 +40,21 @@ def hole_from_head():
     rr = np.hypot(P[:, 0] - c[0], P[:, 1] - c[1])
     lum = view.rgb.reshape(-1, 3).astype(float).mean(axis=1)
     sel = (t > 0.05) & (rr < 0.045) & (lum < 70.0)
+    if 15 <= int(sel.sum()) <= 400 and view.depth_m is not None:
+        dark = sel.reshape(H, W)
+        Pb = view.points_from_mask(grow(dark, 4) & ~grow(dark, 1), stride=1)
+        Pb = Pb[np.all(np.isfinite(Pb), axis=1)]
+        Pb = Pb[(Pb[:, 2] > float(cup.top_z) - 0.03) & (Pb[:, 2] < float(cup.top_z) + 0.005)]
+        if Pb.shape[0] >= 10:
+            zp = float(np.median(Pb[:, 2]))
+            t = np.where(okz, (zp - ob[2]) / np.where(okz, dz, 1.0), -1.0)
+            P = ob + dirs * t[:, None]
+            rr = np.hypot(P[:, 0] - c[0], P[:, 1] - c[1])
+            sel = (t > 0.05) & (rr < 0.045) & (lum < 70.0)
     n = int(sel.sum())
     if n < 15 or n > 400:
         return {"n": n}
     xy = np.median(P[sel][:, :2], axis=0)
-    xy = xy - np.array(HOLE_BIAS)
     if float(np.linalg.norm(xy - c)) > 0.035:
         return {"n": n, "far": round(float(np.linalg.norm(xy - c)), 4)}
     return {"xy": xy, "z": zp, "n": n}
@@ -65,7 +82,7 @@ def elongated(P):
     return c, math.atan2(float(ax[1]), float(ax[0])), length, width
 
 
-def tip_end(P, c, yaw):
+def tip_end(P, c, yaw, r_s):
     ax = np.array([math.cos(yaw), math.sin(yaw)])
     pp = np.array([-ax[1], ax[0]])
     a = (P[:, :2] - c) @ ax
@@ -75,10 +92,10 @@ def tip_end(P, c, yaw):
     for sgn in (1.0, -1.0):
         aa = a * sgn
         amax = float(np.percentile(aa, 99.7))
-        sel = aa > amax - 0.016
+        sel = aa > amax - 2.56 * r_s
         xs, ys = [], []
-        for b0 in np.arange(-0.0044, 0.0045, 0.0011):
-            m_ = sel & (np.abs(p - b0) < 0.00055)
+        for b0 in np.linspace(-0.7 * r_s, 0.7 * r_s, 9):
+            m_ = sel & (np.abs(p - b0) < 0.088 * r_s)
             if int(m_.sum()) >= 3:
                 xs.append(float(b0))
                 ys.append(float(np.percentile(aa[m_], 95)))
@@ -91,6 +108,34 @@ def tip_end(P, c, yaw):
     u = ax * s_tip
     e = c + u * out[s_tip][1]
     return u, e, (round(out[1.0][0], 3), round(out[-1.0][0], 3))
+
+
+def straw_width_r(cam_name, c_, yaw_, tz_, h_top):
+    if not api.has_depth(cam_name):
+        return None
+    P_ = api.points(cam_name, stride=1)
+    P_ = P_[np.all(np.isfinite(P_), axis=1)]
+    u_ = np.array([math.cos(yaw_), math.sin(yaw_)])
+    v_ = np.array([-math.sin(yaw_), math.cos(yaw_)])
+    rel_ = P_[:, :2] - np.asarray(c_, dtype=float)
+    s_, t_ = rel_ @ u_, rel_ @ v_
+    thr_ = max(0.003, 0.5 * float(h_top))
+    sel_ = (np.abs(s_) < 0.04) & (np.abs(t_) < 0.012) & (P_[:, 2] > tz_ + thr_) & (P_[:, 2] < tz_ + 0.03)
+    corr_ = (np.abs(s_) < 0.04) & (np.abs(t_) < 0.012)
+    report["r_width_debug"] = {"pts": int(P_.shape[0]), "corridor": int(corr_.sum()), "raised": int(sel_.sum()),
+                               "corr_z_pct": None if int(corr_.sum()) < 5 else [round(float(np.percentile(P_[corr_, 2], q)) - float(tz_), 4) for q in (5, 50, 95)]}
+    if int(sel_.sum()) < 60:
+        return None
+    widths = []
+    for s0 in np.arange(-0.04, 0.04, 0.005):
+        sl = sel_ & (s_ >= s0) & (s_ < s0 + 0.005)
+        if int(sl.sum()) >= 10:
+            widths.append(float(np.percentile(t_[sl], 98) - np.percentile(t_[sl], 2)) / 0.96)
+    report["r_width_debug"]["slices"] = [round(w_, 4) for w_ in widths]
+    if len(widths) < 4:
+        return None
+    r_ = 0.5 * float(np.median(widths))
+    return r_ if 0.002 < r_ < 0.012 else None
 
 
 def straw_find(cam, table_z, near=None):
@@ -152,6 +197,9 @@ report["head_straw"] = None if found is None else {"src": found[5], "c": [round(
                                                     "len": round(found[3], 3), "width": round(found[4], 3)}
 if found is not None:
     c, yaw = found[1], found[2]
+    h0 = float(np.percentile(found[6][:, 2], 95)) - float(table)
+    r_straw = 0.5 * h0 if 0.004 < h0 < 0.03 else min(max(0.5 * float(found[4]), 0.002), 0.015)
+    report["r_straw_head"] = round(r_straw, 4)
     fast = Limits(joint_velocity=2.4, joint_acceleration=9.0, linear_velocity=0.30)
     tz = table
     try:
@@ -199,9 +247,21 @@ if found is not None:
             again = straw_find(cam, tz, near=np.asarray(c, dtype=float))
             if again is not None:
                 c, yaw = again[1], again[2]
+                hw = float(np.percentile(again[6][:, 2], 95)) - float(tz)
+                r_fw = straw_width_r(cam, c, yaw, tz, hw)
+                report["r_straw_height"] = round(0.5 * hw, 4)
+                report["r_straw_width"] = None if r_fw is None else round(r_fw, 4)
+                if r_fw is not None:
+                    r_straw = r_fw
+                elif 0.004 < hw < 0.03:
+                    r_straw = 0.5 * hw
+                elif 0.004 < float(again[4]) < 0.03:
+                    r_straw = 0.5 * float(again[4])
+                w_seen = float(again[4])
+                report["r_straw"] = round(r_straw, 4)
                 report["wrist_straw"] = {"src": again[5], "c": [round(float(v), 4) for v in again[1]], "yaw_deg": round(math.degrees(again[2]), 1),
                                          "len": round(again[3], 3), "width": round(again[4], 3)}
-                tip = tip_end(again[6], np.asarray(c, dtype=float), yaw)
+                tip = tip_end(again[6], np.asarray(c, dtype=float), yaw, r_straw)
                 if tip is not None:
                     report["tip"] = {"u": [round(float(v), 3) for v in tip[0]], "end": [round(float(v), 4) for v in tip[1]], "slopes": tip[2]}
         report["table_wrist"] = round(tz, 4)
@@ -209,8 +269,8 @@ if found is not None:
         report["hover_error"] = str(error)[:160]
     for k in range(2):
         try:
-            plan = api.top_grasp(side, center=(float(c[0]), float(c[1]), tz + 0.006), top_z=tz + 0.012, bottom_z=tz, yaw=yaw,
-                                 tip_clearance=0.002, contact_width=0.012, lift=0.06, above=0.06, limits=fast,
+            plan = api.top_grasp(side, center=(float(c[0]), float(c[1]), tz + r_straw), top_z=tz + 2.0 * r_straw, bottom_z=tz, yaw=yaw,
+                                 tip_clearance=0.002, contact_width=2.0 * r_straw, lift=0.06, above=0.06, limits=fast,
                                  settle_after_close=20)
             plan.send(depth_next=True, label=f"pick_straw_{k}")
             picked = bool(api.holding(side))
@@ -226,7 +286,7 @@ if found is not None:
                 if again is not None:
                     c, yaw = again[1], again[2]
                     report.setdefault("refind", []).append([round(float(v), 4) for v in again[1]] + [round(math.degrees(again[2]), 1)])
-                    tip2 = tip_end(again[6], np.asarray(c, dtype=float), yaw)
+                    tip2 = tip_end(again[6], np.asarray(c, dtype=float), yaw, r_straw)
                     if tip2 is not None:
                         tip = tip2
         except MotionError as error:
@@ -241,10 +301,10 @@ def cyl_axis(pts):
     best_ = None
     for ya in np.arange(-0.004, 0.00401, 0.0002):
         dy = pts[:, 1] - ya
-        ok = np.abs(dy) < STRAW_R * 0.95
+        ok = np.abs(dy) < r_straw * 0.95
         if int(ok.sum()) < 30:
             continue
-        zs = pts[ok, 2] + np.sqrt(STRAW_R ** 2 - dy[ok] ** 2)
+        zs = pts[ok, 2] + np.sqrt(r_straw ** 2 - dy[ok] ** 2)
         za = float(np.median(zs))
         cost = float(np.median(np.abs(zs - za)))
         if best_ is None or cost < best_[2]:
@@ -310,7 +370,7 @@ def head_servo(hole_guess, tip_z):
     dark = (t_ > 0.05) & (np.hypot(P_[:, 0] - hole_guess[0], P_[:, 1] - hole_guess[1]) < 0.020) & (lum < 70.0) & ~near_plane
     out["hole_n"] = int(dark.sum())
     if out["hole_n"] >= 20:
-        out["hole"] = np.median(P_[dark][:, :2], axis=0) - np.array(HOLE_BIAS)
+        out["hole"] = np.median(P_[dark][:, :2], axis=0)
     mx = rgb.max(axis=1)
     sat = mx - rgb.min(axis=1)
     white = (sat < 40) & (mx > 150) & np.isfinite(dep) & (dep > 0)
@@ -321,7 +381,7 @@ def head_servo(hole_guess, tip_z):
         med = np.median(sel[:, :2], axis=0)
         away = med - ob[:2]
         away = away / max(1e-6, float(np.linalg.norm(away)))
-        out["straw"] = med + 0.785 * STRAW_R * away
+        out["straw"] = med + 0.785 * r_straw * away
     return out
 
 
@@ -332,9 +392,11 @@ if picked and tip is not None and hole is not None and "xy" in hole:
     d_g = R0.T @ u_tip3
     d_g = d_g / float(np.linalg.norm(d_g))
     g_close = G0[:3, 3] - np.array([0.0, 0.0, 0.06])
-    c3 = np.array([float(c[0]), float(c[1]), tz + STRAW_R])
+    c3 = np.array([float(c[0]), float(c[1]), tz + r_straw])
     q = R0.T @ (c3 - g_close)
-    d_tip = float((np.asarray(tip[1], dtype=float) - np.asarray(c, dtype=float)) @ np.asarray(tip[0], dtype=float)) + 0.004
+    ero = min(max(r_straw - 0.5 * w_seen, 0.0), 0.006) if (w_seen is not None and r_straw is not None) else 0.0
+    d_tip = float((np.asarray(tip[1], dtype=float) - np.asarray(c, dtype=float)) @ np.asarray(tip[0], dtype=float)) + ero
+    report["tip_erosion"] = round(ero, 4)
     a_vec = q + d_tip * d_g
     report["in_hand_geom"] = {"q": [round(float(v), 4) for v in q], "d": [round(float(v), 3) for v in d_g], "d_tip": round(d_tip, 4),
                               "a": [round(float(v), 4) for v in a_vec]}
@@ -445,12 +507,12 @@ if picked and tip is not None and hole is not None and "xy" in hole:
             m.tcp(side, grasp_for_tip(tgt0 + 0.02 * up, R_, a_vec), linear=True, limits=Limits(linear_velocity=0.06))
             m.hold(2)
             m.tcp(side, grasp_for_tip(tgt0 - 0.015 * up, R_, a_vec), linear=True, limits=Limits(linear_velocity=0.08))
-            m.hold(70)
+            m.hold(SETTLE_ROWS)
             log0["rows"] = int(m.rows)
             tries_log.append(log0)
             m.send(depth_next=True, label="insert0")
             a_dir = np.array([math.cos(phi), math.sin(phi), 0.0])
-            retries = [("raw_hole", a_vec, d_g, np.array([HOLE_BIAS[0], HOLE_BIAS[1], 0.0]))]
+            retries = [("shift_p", a_vec, d_g, 0.0015 * np.array([-a_dir[1], a_dir[0], 0.0]))]
             if alt is not None and float(np.linalg.norm(np.asarray(alt[0]) - a_vec)) > 0.0015:
                 retries.append(("alt", alt[0], alt[1], np.zeros(3)))
             else:
@@ -465,7 +527,7 @@ if picked and tip is not None and hole is not None and "xy" in hole:
                 m.tcp(side, grasp_for_tip(tgt + 0.012 * up, R2, av2), linear=True, limits=Limits(linear_velocity=0.12))
                 m.hold(3)
                 m.tcp(side, grasp_for_tip(tgt - 0.015 * up, R2, av2), linear=True, limits=Limits(linear_velocity=0.08))
-                m.hold(70)
+                m.hold(SETTLE_ROWS)
                 tries_log.append({"try": k_try, "kind": kind, "rows": int(m.rows)})
                 m.send(depth_next=True, label=f"insert{k_try}")
         except MotionError as error:

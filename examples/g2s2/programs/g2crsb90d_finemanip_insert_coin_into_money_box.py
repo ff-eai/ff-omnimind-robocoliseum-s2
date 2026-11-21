@@ -78,6 +78,8 @@ if tray is None:
         tray = None
 report["tray"] = None if tray is None else tray.summary()
 pick = {"ok": False, "reason": "no tray"}
+R_meas = None
+cg_z0 = None
 if tray is not None:
     hover = top_down((float(tray.mid[0]), float(tray.mid[1]), float(tray.top_z) + 0.14), 0.0)
     try:
@@ -87,11 +89,12 @@ if tray is not None:
         coin = None
         col = coin_by_colour(f"hand_{side}") if api.has_depth(f"hand_{side}") else None
         if col is not None and float(np.linalg.norm(col["center"][:2] - tray.mid[:2])) < 0.18 and col["length"] < 0.07:
+            R_meas = 0.5 * float(col["length"])
             report["coin_colour"] = {"center": [round(float(v), 4) for v in col["center"]], "top": round(col["top"], 4),
                                      "yaw_deg": round(math.degrees(col["yaw"]), 1), "pixels": col["pixels"],
                                      "walls_top": None if col["walls_top"] is None else round(col["walls_top"], 4),
                                      "length": round(col["length"], 4), "width": round(col["width"], 4)}
-            floor = col["walls_top"] if col["walls_top"] is not None and col["walls_top"] < col["top"] - 0.003 else col["top"] - 0.010
+            floor = col["walls_top"] if col["walls_top"] is not None and col["walls_top"] < col["top"] - 0.003 else min(float(tray.top_z), col["top"] - 0.003)
             try:
                 yaw_c = float(col["yaw"]) + math.pi / 2.0
                 cur = api.grasp_pose(side)
@@ -112,6 +115,7 @@ if tray is not None:
                 plan.tcp(side, offset(at, dz=0.05), linear=True, limits=Limits(linear_velocity=0.15))
                 report["pick_rows"] = plan.rows
                 report["deep_grasp"] = {"tips_z": round(tips_z, 4), "grasp_z": round(gz, 4), "yaw_deg": round(math.degrees(yaw_c), 1)}
+                cg_z0 = gz - (float(col["top"]) - R_meas)
                 plan.send(depth_next=True, label="pick_coin")
                 pick = {"ok": bool(api.holding(side, closed_below=0.010)), "reason": "wrist colour"}
                 again = coin_by_colour(f"hand_{side}") if api.has_depth(f"hand_{side}") else None
@@ -130,10 +134,14 @@ if tray is not None:
                 break
         report["coin"] = None if coin is None else coin.summary()
         if coin is not None:
+            R_meas = 0.5 * float(max(coin.extent[0], coin.extent[1]))
             plan = api.top_grasp(side, coin, depth_into=0.010, lift=0.05, above=0.05, limits=FAST)
             report["pick_rows"] = plan.rows
             plan.send(depth_next=True, label="pick_coin")
             pick = {"ok": bool(api.holding(side)), "reason": "wrist"}
+            gn_ = (api.notes.get(f"top_grasp_{side}") or {}).get("grasp")
+            if gn_ is not None:
+                cg_z0 = float(gn_[2]) - (float(coin.top_z) - R_meas)
     except MotionError as error:
         pick = {"ok": False, "reason": str(error)[:200]}
 report["pick"] = pick
@@ -162,6 +170,18 @@ def slot_from_wrist(cam_name, centre_xy, lid_top):
     lid = disc & (np.abs(dep - dplane) < 0.008)
     if int(hole.sum()) < 25 or int(lid.sum()) < 200:
         return {"hole": int(hole.sum()), "lid": int(lid.sum())}
+    lid_z = float(np.median(ob[2] + dirs[lid, 2] * dep[lid]))
+    if abs(lid_z - lid_top) < 0.015:
+        dplane = np.where(okz, (lid_z - ob[2]) / np.where(okz, dz, 1.0), -1.0)
+        P = ob + dirs * dplane[:, None]
+        rr = np.hypot(P[:, 0] - centre_xy[0], P[:, 1] - centre_xy[1])
+        disc = (dplane > 0.03) & (rr < 0.050)
+        hole = disc & ((dep > dplane + 0.02) | (dep <= 0.0) | ~np.isfinite(dep))
+        lid = disc & (np.abs(dep - dplane) < 0.008)
+        if int(hole.sum()) < 25 or int(lid.sum()) < 200:
+            return {"hole": int(hole.sum()), "lid": int(lid.sum()), "lid_z": lid_z}
+    else:
+        lid_z = lid_top
     pts = P[hole][:, :2]
     c0 = np.median(pts, axis=0)
     xy = pts - c0
@@ -172,7 +192,7 @@ def slot_from_wrist(cam_name, centre_xy, lid_top):
     lo, hi = float(np.percentile(sa, 3)), float(np.percentile(sa, 97))
     cen = c0 + ax * (0.5 * (lo + hi)) + pp * float(np.median(sp))
     return {"centre": cen, "yaw": math.atan2(float(ax[1]), float(ax[0])), "length": hi - lo,
-            "width": float(np.percentile(sp, 95) - np.percentile(sp, 5)), "hole": int(hole.sum()), "lid": int(lid.sum())}
+            "width": float(np.percentile(sp, 95) - np.percentile(sp, 5)), "hole": int(hole.sum()), "lid": int(lid.sum()), "lid_z": lid_z}
 
 
 def coin_in_hand(cam_name, side_):
@@ -195,7 +215,7 @@ def coin_in_hand(cam_name, side_):
             "off_x": float(off[0]), "off_y": float(off[1]), "yaw_at": math.atan2(float(G_[1, 1]), float(G_[0, 1]))}
 
 
-if pick["ok"] and box is not None:
+if pick["ok"] and box is not None and R_meas is not None:
     api.stage_done()
     top = float(box.top_z)
     bxy = np.array([float(box.mid[0]), float(box.mid[1])])
@@ -212,7 +232,6 @@ if pick["ok"] and box is not None:
             cl += math.pi
         return cl
 
-    R_COIN = 0.01935
     TILTS = (0.0, -0.26, 0.26, -0.44, 0.44, -0.61, 0.61)
 
     def coin_pose(cxy, cz, cl_, tilt_, cg_):
@@ -222,7 +241,11 @@ if pick["ok"] and box is not None:
         T_[:3, 3] = np.array([float(cxy[0]), float(cxy[1]), float(cz)]) - R_ @ np.asarray(cg_, dtype=float)
         return T_
 
-    cg = np.array([0.0, 0.0, 0.0051])
+    cg = np.array([0.0, 0.0, cg_z0 if cg_z0 is not None else R_meas])
+
+    def ins_depth(tilt_):
+        return min(max(float(cg[2]) + R_meas - tip_beyond_grasp_90d(0.0) - (0.002 if tilt_ == 0.0 else 0.006), 0.004), 0.03)
+
     waist0 = np.array(api.robot_state()["waist"], dtype=float)
     torsos = [None]
     if waist0.size == 5:
@@ -235,8 +258,8 @@ if pick["ok"] and box is not None:
     for w in torsos:
         for tl in TILTS:
             try:
-                depth = 0.014 if tl == 0.0 else 0.010
-                hov = coin_pose(bxy, top + 0.045 + R_COIN, closing_for(yaw_s), tl, cg)
+                depth = ins_depth(tl)
+                hov = coin_pose(bxy, top + 0.045 + R_meas, closing_for(yaw_s), tl, cg)
                 sc = api.motion()
                 if w is not None:
                     sc.waist(w)
@@ -245,8 +268,8 @@ if pick["ok"] and box is not None:
                     sc2 = api.motion()
                     if w is not None:
                         sc2.waist(w)
-                    sc2.tcp(side, coin_pose(bxy, top + 0.012 + R_COIN, cl_try, tl, cg), limits=FAST)
-                    sc2.tcp(side, coin_pose(bxy, top - depth - 0.002 + R_COIN, cl_try, tl, cg), linear=True,
+                    sc2.tcp(side, coin_pose(bxy, top + 0.012 + R_meas, cl_try, tl, cg), limits=FAST)
+                    sc2.tcp(side, coin_pose(bxy, top - depth - 0.002 + R_meas, cl_try, tl, cg), linear=True,
                             limits=Limits(linear_velocity=0.05))
                 m = api.motion()
                 if w is not None:
@@ -275,15 +298,18 @@ if pick["ok"] and box is not None:
         cl = closing_for(yaw_use)
         ch = coin_in_hand(wcam, side) if api.has_depth(wcam) else None
         report["coin_in_hand"] = None if ch is None else {k: round(float(v), 4) for k, v in ch.items()}
-        if ch is not None and 0.028 < ch["span"] < 0.045 and abs(ch["x_mid"]) < 0.012:
+        if ch is not None and 0.015 < ch["span"] < 0.050 and abs(ch["x_mid"]) < 0.012:
             cg[0] = float(ch["x_mid"])
-        if ch is not None and 0.0 < ch["z_top"] + 0.0387 < 0.045:
-            cg[2] = float(ch["z_top"]) + R_COIN
-        report["coin_below"] = round(float(cg[2]) + R_COIN, 4)
-        depth = 0.014 if tilt_used == 0.0 else 0.010
-        c_in = top - depth + R_COIN
-        c_pre = top + 0.012 + R_COIN
-        c_lift = top + 0.003 + R_COIN
+            R_meas = 0.5 * float(ch["span"])
+        if ch is not None and 0.0 < ch["z_top"] + 2.0 * R_meas < 0.045:
+            cg[2] = float(ch["z_top"]) + R_meas
+        report["coin_below"] = round(float(cg[2]) + R_meas, 4)
+        report["r_coin"] = round(R_meas, 4)
+        depth = ins_depth(tilt_used)
+        report["ins_depth"] = round(depth, 4)
+        c_in = top - depth + R_meas
+        c_pre = top + 0.012 + R_meas
+        c_lift = top + 0.003 + R_meas
         wnow = np.array(api.robot_state()["waist"], dtype=float)
         tors2 = [None]
         if wnow.size == 5:
@@ -334,8 +360,11 @@ if pick["ok"] and box is not None:
 
             up_now = above_target()
             tries = [round(1000 * up_now, 1)]
-            steps = [(0.0008, 0.0), (-0.0008, 0.0), (0.0016, 0.0), (-0.0016, 0.0), (0.0, 0.0012), (0.0, -0.0012),
-                     (0.0024, 0.0), (-0.0024, 0.0)]
+            sw = float(sl["width"]) if (sl is not None and "width" in sl) else None
+            st = min(max(0.25 * sw, 0.0006), 0.0015) if sw is not None else 0.001
+            report["retry_step_mm"] = round(1000 * st, 2)
+            steps = [(st, 0.0), (-st, 0.0), (2 * st, 0.0), (-2 * st, 0.0), (0.0, 1.5 * st), (0.0, -1.5 * st),
+                     (3 * st, 0.0), (-3 * st, 0.0)]
             k = 0
             while up_now > 0.004 and k < len(steps) and phase_rows() < 450 - 80 - 45 - 15:
                 da, dl = steps[k]

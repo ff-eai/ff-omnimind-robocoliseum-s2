@@ -42,12 +42,32 @@ if holder is not None:
             pen = {"xy": np.median(pts[:, :2], axis=0), "top": float(np.percentile(pts[:, 2], 95)), "query": q}
             break
 report["pen"] = None if pen is None else {"xy": [round(float(v), 4) for v in pen["xy"]], "top": round(pen["top"], 4), "query": pen["query"]}
-if pen is not None:
+if pen is not None and info["embodiment"] == "agilex":
+    TRIES = ((0.02, (65.0, 80.0, 50.0)), (0.035, (65.0, 80.0, 50.0)), (0.035, (50.0, 65.0, 80.0)), (0.02, (80.0, 65.0, 50.0)))
+    for k_try, (depth, tilts) in enumerate(TRIES):
+        if k_try > 0 and api.rows_left() < 260:
+            break
+        try:
+            m = api.motion()
+            if k_try > 0:
+                m.gripper(side, "open", rows=20)
+            plan = api.top_grasp(side, center=(float(pen["xy"][0]), float(pen["xy"][1]), pen["top"]), top_z=pen["top"],
+                                 bottom_z=pen["top"] - 0.06, depth_into=depth, lift=0.08, above=0.06, tilts=tilts, motion=m)
+        except MotionError as error:
+            report.setdefault("plan_errors", []).append(str(error)[:200])
+            continue
+        plan.send(depth_next=True, label=f"pick_pen{k_try}" if k_try else "pick_pen")
+        report["holding"] = api.holding(side)
+        report["tries"] = k_try + 1
+        if report["holding"]:
+            api.stage_done()
+            break
+elif pen is not None:
     sent = False
     for depth in (0.02, 0.03):
         try:
             plan = api.top_grasp(side, center=(float(pen["xy"][0]), float(pen["xy"][1]), pen["top"]), top_z=pen["top"],
-                                 bottom_z=pen["top"] - 0.06, depth_into=depth, lift=0.05, above=0.06,
+                                 bottom_z=pen["top"] - 0.06, depth_into=depth, lift=0.08, above=0.06,
                                  tilts=(20.0, -20.0, 35.0, -35.0, 50.0, -50.0, 65.0, -65.0, 80.0, -80.0))
         except MotionError as error:
             report.setdefault("plan_errors", []).append(str(error)[:200])

@@ -40,8 +40,9 @@ def axis_info(det, kind):
     other = "hi" if special == "lo" else "lo"
     u = ends[special] - ends[other]
     u = u / max(1e-6, float(np.linalg.norm(u)))
-    h = 0.5 * (float(np.percentile(P[:, 2], 95)) + float(table))
-    return {"c": c, "end": ends[special], "u": u, "stats": stats, "special": special, "h": h}
+    top = float(np.percentile(P[:, 2], 95))
+    h = 0.5 * (top + float(table))
+    return {"c": c, "end": ends[special], "u": u, "stats": stats, "special": special, "h": h, "r": top - h, "len": hi - lo}
 
 
 def grasp_frame(note):
@@ -110,13 +111,16 @@ if pen["ok"]:
         yaw_c = yaw_for(opendir_l, np.array([0.0, -s]))
         Rp = top_down((0.0, 0.0, 0.0), yaw_p)[:3, :3]
         Rc = top_down((0.0, 0.0, 0.0), yaw_c)[:3, :3]
+        d_ins = min(max(float(cap_ax["len"]) + 0.012, 0.02), 0.09)
+        report["measured"] = {"cap_len": round(float(cap_ax["len"]), 4), "pen_len": round(float(pen_ax["len"]), 4),
+                              "r_pen": round(float(pen_ax["r"]), 4), "r_cap": round(float(cap_ax["r"]), 4), "d_ins": round(d_ins, 4)}
         done = False
-        for T in ((0.50, 0.0, 0.95), (0.46, 0.0, 0.93), (0.54, 0.0, 0.97), (0.48, 0.03 * s, 0.95), (0.48, -0.03 * s, 0.95)):
-            T = np.array(T)
+        for T in ((0.50, 0.0, 0.21), (0.46, 0.0, 0.19), (0.54, 0.0, 0.23), (0.48, 0.03 * s, 0.21), (0.48, -0.03 * s, 0.21)):
+            T = np.array([T[0], T[1], float(table) + T[2]])
             axis_y = np.array([0.0, s, 0.0])
             Gp = pose(T - Rp @ tip_l, Rp)
             Gc_pre = pose(T + axis_y * 0.035 - Rc @ mouth_l, Rc)
-            Gc_ins = pose(T - axis_y * (0.0315 + 0.010) - Rc @ mouth_l, Rc)
+            Gc_ins = pose(T - axis_y * d_ins - Rc @ mouth_l, Rc)
             try:
                 m = api.motion()
                 m.tcp({pen_side: Gp, cap_side: Gc_pre})
@@ -154,7 +158,7 @@ if pen["ok"]:
             dz = 0.0
             if pen_pts is not None and cap_pts is not None:
                 dx_seen = float(np.median(pen_pts[:, 0]) - np.median(cap_pts[:, 0]))
-                dz_seen = float(np.percentile(pen_pts[:, 2], 90) - 0.0088) - float(np.percentile(cap_pts[:, 2], 90) - 0.0097)
+                dz_seen = float(np.percentile(pen_pts[:, 2], 90) - float(pen_ax["r"])) - float(np.percentile(cap_pts[:, 2], 90) - float(cap_ax["r"]))
                 report["wrist_check"] = {"dx": round(dx_seen, 4), "dz": round(dz_seen, 4), "pen_pts": int(pen_pts.shape[0]),
                                          "cap_pts": int(cap_pts.shape[0])}
                 if 0.0015 < abs(dx_seen) < 0.010:
@@ -180,8 +184,7 @@ if pen["ok"]:
                 m.gripper(cap_side, "open", rows=15)
                 back = Gc_ins.copy()
                 back[:3, 3] = back[:3, 3] + axis_y * 0.05 + np.array([0.0, 0.0, 0.06])
-                down = Gp.copy()
-                down[2, 3] = table + 0.016
+                down = G_pen.copy()
                 m.tcp({cap_side: back, pen_side: offset(down, dz=0.04)}, limits=FAST)
                 m.tcp(pen_side, down, linear=True, limits=Limits(linear_velocity=0.2))
                 m.gripper(pen_side, "open", rows=15)
